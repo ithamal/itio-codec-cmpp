@@ -2,8 +2,8 @@ package io.github.ithmal.itio.codec.cmpp;
 
 import io.github.ithaml.itio.server.ItioServer;
 import io.github.ithmal.itio.codec.cmpp.base.*;
-import io.github.ithmal.itio.codec.cmpp.handler.CmppMessageCodec;
 import io.github.ithmal.itio.codec.cmpp.handler.ActiveTestRequestHandler;
+import io.github.ithmal.itio.codec.cmpp.handler.CmppMessageCodec;
 import io.github.ithmal.itio.codec.cmpp.message.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -69,6 +69,11 @@ public class CmppServerTests {
                 }
             }
 
+            @Override
+            public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                cause.printStackTrace();
+                ctx.close();
+            }
         });
         server.listen(port);
         System.out.println("已监听端口");

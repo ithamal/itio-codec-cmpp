@@ -2,8 +2,8 @@ package io.github.ithmal.itio.codec.cmpp;
 
 import io.github.ithaml.itio.client.ItioClient;
 import io.github.ithmal.itio.codec.cmpp.base.*;
-import io.github.ithmal.itio.codec.cmpp.handler.CmppMessageCodec;
 import io.github.ithmal.itio.codec.cmpp.handler.ActiveTestRequestHandler;
+import io.github.ithmal.itio.codec.cmpp.handler.CmppMessageCodec;
 import io.github.ithmal.itio.codec.cmpp.message.ConnectRequest;
 import io.github.ithmal.itio.codec.cmpp.message.ConnectResponse;
 import io.github.ithmal.itio.codec.cmpp.message.SubmitRequest;
@@ -14,6 +14,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -34,6 +35,7 @@ public class CmppClientTests {
         int timestamp =  TimeUtils.getTimestamp();
         //
         ItioClient client = new ItioClient();
+        client.setIoThreads(1);
         client.registerCodecHandler(new CmppMessageCodec());
         client.registerCodecHandler(ch -> new ActiveTestRequestHandler());
         client.registerBizHandler(new ChannelInboundHandlerAdapter() {
@@ -78,17 +80,19 @@ public class CmppClientTests {
         submitRequest.setRegisteredDelivery((short) 1);
         submitRequest.setFeeUserType((short) 2);
         submitRequest.setDestTerminalIds(new String[]{"13924604900"});
-        submitRequest.setMsgContent(MsgContent.fromText("【测试签名】测试信息", MsgFormat.UCS2));
-//        submitRequest.setContent(MsgContent.fromText("【测试签名】移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}", MsgFormat.UCS2));
+//        submitRequest.setMsgContent(MsgContent.fromText("【测试签名】测试信息", MsgFormat.UCS2));
+        submitRequest.setMsgContent(MsgContent.fromText("【测试签名】移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}", MsgFormat.UCS2));
         // 长短信分割处理
-        for (SubmitRequest subSubmitRequest : LongSmsUtils.split(submitRequest)) {
-            client.writeAndFlush(subSubmitRequest);
-            System.out.println("提交请求");
-            SubmitResponse submitResponse = client.waitForResponse(SubmitResponse.class);
-            System.out.println("提交响应");
-            System.out.println(submitResponse);
+        List<SubmitRequest> splitSubmitRequests = LongSmsUtils.split(submitRequest);
+        for (SubmitRequest subSubmitRequest : splitSubmitRequests) {
+            client.writeAndFlush(subSubmitRequest).syncUninterruptibly();
+            System.out.println("提交请求：" + subSubmitRequest);
         }
-        TimeUnit.SECONDS.sleep(30);
+        List<SubmitResponse> submitResponses = client.waitForResponses(SubmitResponse.class, splitSubmitRequests.size());
+        for (SubmitResponse submitResponse : submitResponses) {
+            System.out.println("提交响应：" + submitResponse);
+        }
+        TimeUnit.SECONDS.sleep(60);
         client.disconnect();
         System.out.println("已断开连接");
     }

@@ -163,7 +163,8 @@ public class SubmitRequest extends CmppMessage {
     @Override
     public String toString() {
         return "CmppSubmitRequest{" +
-                "msgId=" + msgId +
+                "sequenceId=" + getSequenceId() +
+                ",msgId=" + msgId +
                 ", pkTotal=" + pkTotal +
                 ", pkNumber=" + pkNumber +
                 ", registeredDelivery=" + registeredDelivery +
