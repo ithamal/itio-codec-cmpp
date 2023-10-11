@@ -33,7 +33,7 @@ public class ConnectRequestMessageCodec implements ICmppCodec<ConnectRequest> {
     @Override
     public void encode(ChannelHandlerContext ctx, ConnectRequest msg, ByteBuf byteBuf) throws Exception {
         ctx.channel().attr(MessageCodecVersionAdapter.VERSION_ATTR_KEY).set(msg.getVersion());
-        byteBuf.writeBytes(msg.getSourceAddr().getBytes(StandardCharsets.US_ASCII));
+        byteBuf.writeBytes(StringUtils.toBytes(msg.getSourceAddr(), 6));
         byteBuf.writeBytes(msg.getAuthenticatorSource().getDigestBytes());
         byteBuf.writeByte(msg.getVersion());
         byteBuf.writeInt(msg.getTimestamp());
