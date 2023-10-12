@@ -3,7 +3,7 @@ package io.github.ithmal.itio.codec.cmpp.handler.codec.v30;
 import io.github.ithmal.itio.codec.cmpp.base.MsgContent;
 import io.github.ithmal.itio.codec.cmpp.base.MsgFormat;
 import io.github.ithmal.itio.codec.cmpp.base.MsgReport;
-import io.github.ithmal.itio.codec.cmpp.handler.ICmppCodec;
+import io.github.ithmal.itio.codec.cmpp.handler.IMessageCodec;
 import io.github.ithmal.itio.codec.cmpp.message.DeliverRequest;
 import io.github.ithmal.itio.codec.cmpp.util.StringUtils;
 import io.netty.buffer.ByteBuf;
@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
  * @author: ken.lin
  * @since: 2023-10-01 08:49
  */
-public class DeliverRequest30MessageCodec implements ICmppCodec<DeliverRequest> {
+public class DeliverRequest30MessageCodec implements IMessageCodec<DeliverRequest> {
 
     @Override
     public DeliverRequest decode(ChannelHandlerContext ctx, int sequenceId, ByteBuf byteBuf) throws Exception {
@@ -81,5 +81,15 @@ public class DeliverRequest30MessageCodec implements ICmppCodec<DeliverRequest> 
             byteBuf.writeInt(report.getSmscSequence());
         }
         byteBuf.writeBytes(new byte[20]);
+    }
+
+    @Override
+    public int getBodyLength(ChannelHandlerContext ctx, DeliverRequest msg) {
+        int length = 97;
+        if (msg.getReport() != null) {
+            return length + 71;
+        } else {
+            return length + msg.getMsgContent().getMsgLength();
+        }
     }
 }

@@ -1,6 +1,6 @@
 package io.github.ithmal.itio.codec.cmpp.handler.codec;
 
-import io.github.ithmal.itio.codec.cmpp.handler.ICmppCodec;
+import io.github.ithmal.itio.codec.cmpp.handler.IMessageCodec;
 import io.github.ithmal.itio.codec.cmpp.message.QueryResponse;
 import io.github.ithmal.itio.codec.cmpp.util.StringUtils;
 import io.netty.buffer.ByteBuf;
@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
  * @author: ken.lin
  * @since: 2023-10-01 08:49
  */
-public class QueryResponseMessageCodec implements ICmppCodec<QueryResponse> {
+public class QueryResponseMessageCodec implements IMessageCodec<QueryResponse> {
 
     @Override
     public QueryResponse decode(ChannelHandlerContext ctx, int sequenceId, ByteBuf byteBuf) throws Exception {
@@ -47,5 +47,10 @@ public class QueryResponseMessageCodec implements ICmppCodec<QueryResponse> {
         byteBuf.writeInt(msg.getMoWait());
         byteBuf.writeInt(msg.getMoFail());
 
+    }
+
+    @Override
+    public int getBodyLength(ChannelHandlerContext ctx, QueryResponse msg) {
+        return 51;
     }
 }

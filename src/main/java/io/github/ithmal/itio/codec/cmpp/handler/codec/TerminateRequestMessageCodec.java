@@ -1,6 +1,6 @@
 package io.github.ithmal.itio.codec.cmpp.handler.codec;
 
-import io.github.ithmal.itio.codec.cmpp.handler.ICmppCodec;
+import io.github.ithmal.itio.codec.cmpp.handler.IMessageCodec;
 import io.github.ithmal.itio.codec.cmpp.message.TerminateRequest;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -11,7 +11,7 @@ import io.netty.channel.ChannelHandlerContext;
  * @author: ken.lin
  * @since: 2023-10-01 08:49
  */
-public class TerminateRequestMessageCodec implements ICmppCodec<TerminateRequest> {
+public class TerminateRequestMessageCodec implements IMessageCodec<TerminateRequest> {
 
     @Override
     public TerminateRequest decode(ChannelHandlerContext ctx, int sequenceId,  ByteBuf byteBuf) throws Exception {
@@ -21,5 +21,10 @@ public class TerminateRequestMessageCodec implements ICmppCodec<TerminateRequest
     @Override
     public void encode(ChannelHandlerContext ctx, TerminateRequest msg, ByteBuf byteBuf) throws Exception {
 
+    }
+
+    @Override
+    public int getBodyLength(ChannelHandlerContext ctx, TerminateRequest msg) {
+        return 0;
     }
 }

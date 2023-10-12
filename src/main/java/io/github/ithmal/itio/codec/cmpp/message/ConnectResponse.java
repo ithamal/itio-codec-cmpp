@@ -42,16 +42,6 @@ public class ConnectResponse extends CmppMessage {
     }
 
     @Override
-    public int getLength20() {
-        return 18;
-    }
-
-    @Override
-    public int getLength30() {
-        return 21;
-    }
-
-    @Override
     public String toString() {
         return "ConnectResponse{" +
                 "status=" + status +

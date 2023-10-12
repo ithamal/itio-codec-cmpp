@@ -23,14 +23,4 @@ public class CancelResponse extends CmppMessage {
     public CancelResponse(int sequenceId) {
         super(Command.CANCEL_RESPONSE, sequenceId);
     }
-
-    @Override
-    public int getLength20() {
-        return 1;
-    }
-
-    @Override
-    public int getLength30() {
-        return 4;
-    }
 }

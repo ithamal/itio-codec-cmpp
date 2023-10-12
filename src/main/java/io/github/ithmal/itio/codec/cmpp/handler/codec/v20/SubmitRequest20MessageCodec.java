@@ -1,6 +1,6 @@
 package io.github.ithmal.itio.codec.cmpp.handler.codec.v20;
 
-import io.github.ithmal.itio.codec.cmpp.handler.ICmppCodec;
+import io.github.ithmal.itio.codec.cmpp.handler.IMessageCodec;
 import io.github.ithmal.itio.codec.cmpp.base.MsgContent;
 import io.github.ithmal.itio.codec.cmpp.base.MsgFormat;
 import io.github.ithmal.itio.codec.cmpp.message.SubmitRequest;
@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
  * @author: ken.lin
  * @since: 2023-10-01 08:49
  */
-public class SubmitRequest20MessageCodec implements ICmppCodec<SubmitRequest> {
+public class SubmitRequest20MessageCodec implements IMessageCodec<SubmitRequest> {
 
     @Override
     public SubmitRequest decode(ChannelHandlerContext ctx, int sequenceId, ByteBuf byteBuf) throws Exception {
@@ -77,5 +77,10 @@ public class SubmitRequest20MessageCodec implements ICmppCodec<SubmitRequest> {
         }
         msg.getMsgContent().write(byteBuf);
         byteBuf.writeBytes(StringUtils.toBytes(null, 8));
+    }
+
+    @Override
+    public int getBodyLength(ChannelHandlerContext ctx, SubmitRequest msg) {
+        return 126 + 21 * msg.getDestTerminalIds().length + msg.getMsgContent().getMsgLength();
     }
 }

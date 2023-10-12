@@ -65,27 +65,6 @@ public class DeliverRequest extends CmppMessage {
         super(Command.DELIVER_REQUEST, sequenceId);
     }
 
-    @Override
-    public int getLength20() {
-        int length = 73;
-        if (report != null) {
-            return length + 60;
-        } else {
-            return length + msgContent.getMsgLength();
-        }
-    }
-
-    @Override
-    public int getLength30() {
-        int length = 97;
-        if (report != null) {
-            return length + 71;
-        } else {
-            return length + msgContent.getMsgLength();
-        }
-    }
-
-
     public DeliverRequest copy() {
         DeliverRequest newObj = new DeliverRequest(getSequenceId());
         newObj.msgId = this.msgId;

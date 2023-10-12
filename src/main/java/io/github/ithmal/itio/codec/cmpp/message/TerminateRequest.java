@@ -12,14 +12,4 @@ public class TerminateRequest extends CmppMessage {
     public TerminateRequest(int sequenceId) {
         super(Command.TERMINATE_REQUEST, sequenceId);
     }
-
-    @Override
-    public int getLength20() {
-        return 0;
-    }
-
-    @Override
-    public int getLength30() {
-        return 0;
-    }
 }

@@ -40,17 +40,6 @@ public class ConnectRequest extends CmppMessage {
         super(Command.CONNECT_REQUEST, sequenceId);
     }
 
-
-    @Override
-    public int getLength20() {
-        return 27;
-    }
-
-    @Override
-    public int getLength30() {
-        return 27;
-    }
-
     @Override
     public String toString() {
         return "CmppConnectRequest{" +

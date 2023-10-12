@@ -35,13 +35,4 @@ public class DeliverResponse extends CmppMessage {
         super(Command.DELIVER_RESPONSE, sequenceId);
     }
 
-    @Override
-    public int getLength20() {
-        return 9;
-    }
-
-    @Override
-    public int getLength30() {
-        return 12;
-    }
 }

@@ -71,14 +71,4 @@ public class QueryResponse extends CmppMessage {
     public QueryResponse(int sequenceId) {
         super(Command.QUERY_RESPONSE, sequenceId);
     }
-
-    @Override
-    public int getLength20() {
-        return 51;
-    }
-
-    @Override
-    public int getLength30() {
-        return 51;
-    }
 }

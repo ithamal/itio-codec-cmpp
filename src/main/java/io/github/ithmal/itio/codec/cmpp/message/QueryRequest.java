@@ -32,14 +32,4 @@ public class QueryRequest extends CmppMessage {
     public QueryRequest(int sequenceId) {
         super(Command.QUERY_REQUEST, sequenceId);
     }
-
-    @Override
-    public int getLength20() {
-        return 27;
-    }
-
-    @Override
-    public int getLength30() {
-        return 27;
-    }
 }

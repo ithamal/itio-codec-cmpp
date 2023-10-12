@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @SuppressWarnings("unchecked")
 public class CmppMessageCodec extends ChannelDuplexHandler {
 
-    private final ConcurrentHashMap<Command, ICmppCodec<? extends CmppMessage>> codecMap = new ConcurrentHashMap<>(16);
+    private final ConcurrentHashMap<Command, IMessageCodec<? extends CmppMessage>> codecMap = new ConcurrentHashMap<>(16);
 
     private static final Logger logger = LoggerFactory.getLogger(CmppMessageCodec.class);
 
@@ -93,21 +93,21 @@ public class CmppMessageCodec extends ChannelDuplexHandler {
         ByteBuf out = null;
         try {
             Command command = msg.getCommand();
+            IMessageCodec<CmppMessage> codec = (IMessageCodec<CmppMessage>) codecMap.get(command);
+            if (codec == null) {
+                logger.error("can not find codec for command: {}", command);
+                out.release();
+                out = null;
+                return null;
+            }
             int sequenceId = msg.getSequenceId();
             int commandId = command.getId();
-            int bodyLength = MessageCodecVersionAdapter.isVersion2(ctx) ? msg.getLength20() : msg.getLength30();
+            int bodyLength = codec.getBodyLength(ctx, msg);
             int totalLength = bodyLength + HEAD_LENGTH;
             out = ctx.alloc().buffer(totalLength);
             out.writeInt(totalLength);
             out.writeInt(commandId);
             out.writeInt(sequenceId);
-            ICmppCodec<CmppMessage> codec = (ICmppCodec<CmppMessage>) codecMap.get(command);
-            if (codec == null) {
-                logger.error("can not find codec for commandId: {}", commandId);
-                out.release();
-                out = null;
-                return null;
-            }
             int beforeReadIndex = out.readableBytes();
             codec.encode(ctx, msg, out);
             int afterReadIndex = out.readableBytes();
@@ -157,7 +157,7 @@ public class CmppMessageCodec extends ChannelDuplexHandler {
             in.readBytes(bodyLength).release();
             return null;
         }
-        ICmppCodec<CmppMessage> codec = (ICmppCodec<CmppMessage>) codecMap.get(command);
+        IMessageCodec<CmppMessage> codec = (IMessageCodec<CmppMessage>) codecMap.get(command);
         if (codec == null) {
             logger.error("can not find codec for commandId: {}", commandId);
             in.readBytes(bodyLength).release();

@@ -1,7 +1,7 @@
 package io.github.ithmal.itio.codec.cmpp.handler.codec.v30;
 
 import io.github.ithmal.itio.codec.cmpp.base.AuthenticatorISMG;
-import io.github.ithmal.itio.codec.cmpp.handler.ICmppCodec;
+import io.github.ithmal.itio.codec.cmpp.handler.IMessageCodec;
 import io.github.ithmal.itio.codec.cmpp.message.ConnectResponse;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -12,7 +12,7 @@ import io.netty.channel.ChannelHandlerContext;
  * @author: ken.lin
  * @since: 2023-10-01 08:49
  */
-public class ConnectResponse30MessageCodec implements ICmppCodec<ConnectResponse> {
+public class ConnectResponse30MessageCodec implements IMessageCodec<ConnectResponse> {
 
     @Override
     public ConnectResponse decode(ChannelHandlerContext ctx, int sequenceId, ByteBuf byteBuf) throws Exception {
@@ -30,5 +30,10 @@ public class ConnectResponse30MessageCodec implements ICmppCodec<ConnectResponse
         byteBuf.writeInt(msg.getStatus());
         byteBuf.writeBytes(msg.getAuthenticatorISMG().getDigestBytes());
         byteBuf.writeByte(msg.getVersion());
+    }
+
+    @Override
+    public int getBodyLength(ChannelHandlerContext ctx, ConnectResponse msg) {
+        return 21;
     }
 }

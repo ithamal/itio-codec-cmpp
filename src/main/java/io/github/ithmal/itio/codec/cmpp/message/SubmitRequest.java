@@ -149,17 +149,6 @@ public class SubmitRequest extends CmppMessage {
         return newObj;
     }
 
-
-    @Override
-    public int getLength20() {
-        return 126 + 21 * destTerminalIds.length + msgContent.getMsgLength();
-    }
-
-    @Override
-    public int getLength30() {
-        return 151 + 32 * destTerminalIds.length + msgContent.getMsgLength();
-    }
-
     @Override
     public String toString() {
         return "CmppSubmitRequest{" +

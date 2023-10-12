@@ -23,8 +23,4 @@ public abstract class CmppMessage {
         this.command = command;
         this.sequenceId = sequenceId;
     }
-
-    public abstract int getLength20();
-
-    public abstract int getLength30();
 }

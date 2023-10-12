@@ -2,7 +2,7 @@ package io.github.ithmal.itio.codec.cmpp.handler.codec.v30;
 
 import io.github.ithmal.itio.codec.cmpp.base.MsgContent;
 import io.github.ithmal.itio.codec.cmpp.base.MsgFormat;
-import io.github.ithmal.itio.codec.cmpp.handler.ICmppCodec;
+import io.github.ithmal.itio.codec.cmpp.handler.IMessageCodec;
 import io.github.ithmal.itio.codec.cmpp.message.SubmitRequest;
 import io.github.ithmal.itio.codec.cmpp.util.StringUtils;
 import io.netty.buffer.ByteBuf;
@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
  * @author: ken.lin
  * @since: 2023-10-01 08:49
  */
-public class SubmitRequest30MessageCodec implements ICmppCodec<SubmitRequest> {
+public class SubmitRequest30MessageCodec implements IMessageCodec<SubmitRequest> {
 
     @Override
     public SubmitRequest decode(ChannelHandlerContext ctx, int sequenceId,  ByteBuf byteBuf) throws Exception {
@@ -81,5 +81,10 @@ public class SubmitRequest30MessageCodec implements ICmppCodec<SubmitRequest> {
         byteBuf.writeByte(0); //接收短信的用户的号码类型，0：真实号码；1：伪码。
         msg.getMsgContent().write(byteBuf);
         byteBuf.writeBytes(StringUtils.toBytes(null, 20));
+    }
+
+    @Override
+    public int getBodyLength(ChannelHandlerContext ctx, SubmitRequest msg) {
+        return 151 + 32 * msg.getDestTerminalIds().length + msg.getMsgContent().getMsgLength();
     }
 }

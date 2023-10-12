@@ -1,6 +1,6 @@
 package io.github.ithmal.itio.codec.cmpp.handler.codec.v30;
 
-import io.github.ithmal.itio.codec.cmpp.handler.ICmppCodec;
+import io.github.ithmal.itio.codec.cmpp.handler.IMessageCodec;
 import io.github.ithmal.itio.codec.cmpp.message.CancelResponse;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -11,7 +11,7 @@ import io.netty.channel.ChannelHandlerContext;
  * @author: ken.lin
  * @since: 2023-10-01 08:49
  */
-public class CancelResponse30MessageCodec implements ICmppCodec<CancelResponse> {
+public class CancelResponse30MessageCodec implements IMessageCodec<CancelResponse> {
 
     @Override
     public CancelResponse decode(ChannelHandlerContext ctx, int sequenceId, ByteBuf byteBuf) throws Exception {
@@ -23,5 +23,10 @@ public class CancelResponse30MessageCodec implements ICmppCodec<CancelResponse> 
     @Override
     public void encode(ChannelHandlerContext ctx, CancelResponse msg, ByteBuf byteBuf) throws Exception {
         byteBuf.writeInt(msg.getSuccess());
+    }
+
+    @Override
+    public int getBodyLength(ChannelHandlerContext ctx, CancelResponse msg) {
+        return 4;
     }
 }

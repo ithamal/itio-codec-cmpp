@@ -8,7 +8,7 @@ import io.netty.channel.ChannelHandlerContext;
  * @author: ken.lin
  * @since: 2023-10-01 08:27
  */
-public interface ICmppCodec<T extends CmppMessage> {
+public interface IMessageCodec<T extends CmppMessage> {
 
     /**
      * 解码
@@ -21,4 +21,10 @@ public interface ICmppCodec<T extends CmppMessage> {
      *
      */
     void encode(ChannelHandlerContext ctx, T msg, ByteBuf byteBuf) throws Exception;
+
+    /**
+     * 获取主体长度
+     * @return
+     */
+    int getBodyLength(ChannelHandlerContext ctx, T msg);
 }
