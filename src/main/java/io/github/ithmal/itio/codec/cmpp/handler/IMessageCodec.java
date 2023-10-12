@@ -24,6 +24,8 @@ public interface IMessageCodec<T extends CmppMessage> {
 
     /**
      * 获取主体长度
+     * @param ctx
+     * @param msg
      * @return
      */
     int getBodyLength(ChannelHandlerContext ctx, T msg);

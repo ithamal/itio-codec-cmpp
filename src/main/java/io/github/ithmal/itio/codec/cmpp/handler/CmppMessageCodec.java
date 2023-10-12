@@ -19,9 +19,9 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @description: cmpp的编解码器
+ * cmpp的编解码器
  * @author: ken.lin
- * @date: 2023/2/4
+ * @since: 2023/2/4
  **/
 @ChannelHandler.Sharable
 @SuppressWarnings("unchecked")

@@ -17,7 +17,7 @@ public final class ByteUtils {
      * @param array     原数组
      * @param minLength 最小长度
      * @param padding   扩展长度
-     * @return
+     * @return 字节数组
      */
     public static byte[] ensureLength(byte[] array, int minLength, int padding) {
         if (array.length == minLength) {
