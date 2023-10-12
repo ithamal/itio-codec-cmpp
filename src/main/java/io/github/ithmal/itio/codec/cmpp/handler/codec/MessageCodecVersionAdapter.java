@@ -23,14 +23,14 @@ public class MessageCodecVersionAdapter<T extends CmppMessage> implements ICmppC
         this.v3Codec = v3Codec;
     }
 
-    public static boolean isCmppV2(ChannelHandlerContext ctx) {
+    public static boolean isVersion2(ChannelHandlerContext ctx) {
         Short version = ctx.channel().attr(VERSION_ATTR_KEY).get();
         return version == null || version < CmppMessage.VERSION_30;
     }
 
     @Override
     public T decode(ChannelHandlerContext ctx, int sequenceId,  ByteBuf byteBuf) throws Exception {
-        if (isCmppV2(ctx)) {
+        if (isVersion2(ctx)) {
             return v2Codec.decode(ctx, sequenceId, byteBuf);
         } else {
             return v3Codec.decode(ctx, sequenceId, byteBuf);
@@ -39,7 +39,7 @@ public class MessageCodecVersionAdapter<T extends CmppMessage> implements ICmppC
 
     @Override
     public void encode(ChannelHandlerContext ctx, T msg, ByteBuf byteBuf) throws Exception {
-        if(isCmppV2(ctx)) {
+        if(isVersion2(ctx)) {
             v2Codec.encode(ctx, msg, byteBuf);
         }else{
             v3Codec.encode(ctx, msg, byteBuf);

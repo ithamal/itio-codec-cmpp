@@ -53,7 +53,7 @@ public class ConnectResponse extends CmppMessage {
 
     @Override
     public String toString() {
-        return "CmppConnectResponse{" +
+        return "ConnectResponse{" +
                 "status=" + status +
                 ", authenticatorISMG=" + authenticatorISMG +
                 ", version=" + version +

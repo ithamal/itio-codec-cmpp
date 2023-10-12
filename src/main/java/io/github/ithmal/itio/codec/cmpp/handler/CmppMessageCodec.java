@@ -6,12 +6,15 @@ import io.github.ithmal.itio.codec.cmpp.handler.codec.*;
 import io.github.ithmal.itio.codec.cmpp.handler.codec.v20.*;
 import io.github.ithmal.itio.codec.cmpp.handler.codec.v30.*;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToMessageCodec;
+import io.netty.channel.ChannelPromise;
+import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -21,11 +24,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * @date: 2023/2/4
  **/
 @ChannelHandler.Sharable
-public class CmppMessageCodec extends MessageToMessageCodec<ByteBuf, CmppMessage> {
+@SuppressWarnings("unchecked")
+public class CmppMessageCodec extends ChannelDuplexHandler {
 
     private final ConcurrentHashMap<Command, ICmppCodec<? extends CmppMessage>> codecMap = new ConcurrentHashMap<>(16);
 
     private static final Logger logger = LoggerFactory.getLogger(CmppMessageCodec.class);
+
+    private final int HEAD_LENGTH = 12;
 
     public CmppMessageCodec() {
         codecMap.put(Command.CONNECT_REQUEST, new ConnectRequestMessageCodec());
@@ -45,57 +51,126 @@ public class CmppMessageCodec extends MessageToMessageCodec<ByteBuf, CmppMessage
     }
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, CmppMessage msg, List<Object> out) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        if (!(msg instanceof ByteBuf)) {
+            super.channelRead(ctx, msg);
+            return;
+        }
         try {
-            Command command = msg.getCommand();
-            int sequenceId = msg.getSequenceId();
-            int commandId = command.getId();
-            //消息总长度
-            int bodyLength = MessageCodecVersionAdapter.isCmppV2(ctx)? msg.getLength20(): msg.getLength30();
-            int totalLength = bodyLength + (4 + 4 + 4);
-            ByteBuf byteBuf = ctx.alloc().buffer(totalLength);
-            byteBuf.writeInt(totalLength);
-            byteBuf.writeInt(commandId);
-            byteBuf.writeInt(sequenceId);
-            ICmppCodec codec = codecMap.get(command);
-            if (codec == null) {
-                logger.error("Cann't find codec for commandId: {}", commandId);
-                return;
+            ByteBuf in = (ByteBuf) msg;
+            List<CmppMessage> out = new ArrayList<>(3);
+            decode(ctx, in, out);
+            for (CmppMessage message : out) {
+                super.channelRead(ctx, message);
             }
-            int beforeByteCount = byteBuf.readableBytes();
-            codec.encode(ctx, msg, byteBuf);
-            int afterByteCount = byteBuf.readableBytes();
-            if (afterByteCount - beforeByteCount != bodyLength) {
-                String message = "data length except for codec: " + msg.getClass()
-                                + ", except:" + bodyLength + ",actual:" + (afterByteCount - beforeByteCount);
-                throw new Exception(message);
+        } catch (Throwable cause) {
+            exceptionCaught(ctx, cause);
+        } finally {
+            if (!ReferenceCountUtil.release(msg)) {
+                ((ByteBuf) msg).release();
             }
-            out.add(byteBuf);
-        } catch (Throwable e) {
-            exceptionCaught(ctx, e);
         }
     }
 
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf bytebuf, List<Object> out) throws Exception {
-        try {
-            int totalLength = bytebuf.readInt();
-            int commandId = bytebuf.readInt();
-            int sequenceId = bytebuf.readInt();
-            Command command = Command.of(commandId);
-            if (command == null) {
-                logger.error("Not supported command id： {}", commandId);
-                return;
-            }
-            ICmppCodec codec = codecMap.get(command);
-            if (codec == null) {
-                logger.error("Cann't find codec for commandId: {}", commandId);
-                return;
-            }
-            CmppMessage message = codec.decode(ctx, sequenceId, bytebuf);
-            out.add(message);
-        } catch (Throwable e) {
-            exceptionCaught(ctx, e);
+    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+        if (!(msg instanceof CmppMessage)) {
+            super.write(ctx, msg, promise);
+            return;
         }
+        try {
+            ByteBuf out = encode(ctx, (CmppMessage) msg);
+            if (out != null) {
+                super.write(ctx, out, promise);
+            }
+        } catch (Throwable cause) {
+            exceptionCaught(ctx, cause);
+        }
+    }
+
+
+    protected ByteBuf encode(ChannelHandlerContext ctx, CmppMessage msg) throws Exception {
+        ByteBuf out = null;
+        try {
+            Command command = msg.getCommand();
+            int sequenceId = msg.getSequenceId();
+            int commandId = command.getId();
+            int bodyLength = MessageCodecVersionAdapter.isVersion2(ctx) ? msg.getLength20() : msg.getLength30();
+            int totalLength = bodyLength + HEAD_LENGTH;
+            out = ctx.alloc().buffer(totalLength);
+            out.writeInt(totalLength);
+            out.writeInt(commandId);
+            out.writeInt(sequenceId);
+            ICmppCodec<CmppMessage> codec = (ICmppCodec<CmppMessage>) codecMap.get(command);
+            if (codec == null) {
+                logger.error("can not find codec for commandId: {}", commandId);
+                out.release();
+                out = null;
+                return null;
+            }
+            int beforeReadIndex = out.readableBytes();
+            codec.encode(ctx, msg, out);
+            int afterReadIndex = out.readableBytes();
+            if (afterReadIndex - beforeReadIndex != bodyLength) {
+                String message = "data length except for codec: " + msg.getClass()
+                        + ", except:" + bodyLength + ",actual:" + (afterReadIndex - afterReadIndex);
+                throw new Exception(message);
+            }
+            return out;
+        } catch (Throwable e) {
+            if (out != null) {
+                out.release();
+            }
+            exceptionCaught(ctx, e);
+            return null;
+        }
+    }
+
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<CmppMessage> out) throws Exception {
+        for (; ; ) {
+            CmppMessage msg = decode(ctx, in);
+            if (msg == null) {
+                break;
+            } else {
+                out.add(msg);
+            }
+        }
+    }
+
+    protected CmppMessage decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
+        if (in.readableBytes() < HEAD_LENGTH) {
+            return null;
+        }
+        int totalLength = in.readInt();
+        int commandId = in.readInt();
+        int sequenceId = in.readInt();
+        int bodyLength = totalLength - HEAD_LENGTH;
+        if (in.readableBytes() < bodyLength) {
+            // 可能是ChannelOption.SO_RCVBUF、ChannelOption.RCVBUF_ALLOCATOR设置过小
+            String message = String.format("readable bytes insufficiently： %s, %s, expect: %s, actual: %s",
+                    ctx.channel(), commandId, bodyLength, in.readableBytes());
+            throw new Exception(message);
+        }
+        Command command = Command.of(commandId);
+        if (command == null) {
+            logger.error("not supported command id： {}", commandId);
+            in.readBytes(bodyLength).release();
+            return null;
+        }
+        ICmppCodec<CmppMessage> codec = (ICmppCodec<CmppMessage>) codecMap.get(command);
+        if (codec == null) {
+            logger.error("can not find codec for commandId: {}", commandId);
+            in.readBytes(bodyLength).release();
+            return null;
+        }
+        int beforeReadIndex = in.readerIndex();
+        CmppMessage out = codec.decode(ctx, sequenceId, in);
+        int afterReadIndex = in.readerIndex();
+        if (afterReadIndex - beforeReadIndex != bodyLength) {
+            String message = "data length except for codec: " + out.getClass()
+                    + ", except:" + bodyLength + ",actual:" + (afterReadIndex - beforeReadIndex);
+            throw new Exception(message);
+        }
+        return out;
     }
 }

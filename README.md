@@ -9,20 +9,21 @@ int port = 7890;
 String sourceAddr = "301001";
 String password = "2ymsc7";
 String sourceId = "106908887002";
-int timestamp =  TimeUtils.getTimestamp();
+int timestamp = TimeUtils.getTimestamp();
 //
 ItioClient client = new ItioClient();
+client.option(ChannelOption.SO_RCVBUF, 512);
 client.registerCodecHandler(new CmppMessageCodec());
 client.registerCodecHandler(ch -> new ActiveTestRequestHandler());
 client.registerBizHandler(new ChannelInboundHandlerAdapter() {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        System.out.println(msg);
+    System.out.println(msg);
     }
     
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        cause.printStackTrace();
+    cause.printStackTrace();
     }
 });
 client.connect(host, port);
@@ -34,10 +35,9 @@ connectRequest.setSourceAddr(sourceAddr);
 connectRequest.setSequenceId(1);
 connectRequest.setAuthenticatorSource(authenticatorSource);
 connectRequest.setTimestamp(timestamp);
-connectRequest.setVersion(CmppMessage.VERSION_30);
-client.writeAndFlush(connectRequest);
+connectRequest.setVersion(CmppMessage.VERSION_20);
 System.out.println("已请求");
-ConnectResponse connectResponse = client.waitForResponse(ConnectResponse.class);
+ConnectResponse connectResponse = client.writeWaitResponse(connectRequest, ConnectResponse.class);
 System.out.println("已响应");
 System.out.println(connectResponse);
 AuthenticatorISMG authenticatorISMG = connectResponse.getAuthenticatorISMG();
@@ -56,17 +56,14 @@ submitRequest.setPkNumber((short) 1);
 submitRequest.setRegisteredDelivery((short) 1);
 submitRequest.setFeeUserType((short) 2);
 submitRequest.setDestTerminalIds(new String[]{"13924604900"});
-submitRequest.setMsgContent(MsgContent.fromText("【测试签名】测试信息", MsgFormat.UCS2));
-//        submitRequest.setMsgContent(MsgContent.fromText("【测试签名】移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}", MsgFormat.UCS2));
-// 长短信分割处理
-for (SubmitRequest subSubmitRequest : LongSmsUtils.split(submitRequest)) {
-    client.writeAndFlush(subSubmitRequest);
-    System.out.println("提交请求");
-    SubmitResponse submitResponse = client.waitForResponse(SubmitResponse.class);
-    System.out.println("提交响应");
-    System.out.println(submitResponse);
+//        submitRequest.setMsgContent(MsgContent.fromText("【测试签名】测试信息", MsgFormat.UCS2));
+submitRequest.setMsgContent(MsgContent.fromText("【测试签名】移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP" +
+"短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}", MsgFormat.UCS2));
+List<SubmitResponse> submitResponses = client.writeWaitResponses(LongSmsUtils.split(submitRequest), SubmitResponse.class);
+for (SubmitResponse submitResponse : submitResponses) {
+    System.out.println("提交响应：" + submitResponse);
 }
-TimeUnit.SECONDS.sleep(30);
+TimeUnit.SECONDS.sleep(60);
 client.disconnect();
 System.out.println("已断开连接");
 ```

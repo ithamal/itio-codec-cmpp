@@ -12,8 +12,11 @@ import io.github.ithmal.itio.codec.cmpp.util.LongSmsUtils;
 import io.github.ithmal.itio.codec.cmpp.util.TimeUtils;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.FixedRecvByteBufAllocator;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -32,10 +35,11 @@ public class CmppClientTests {
         String sourceAddr = "301001";
         String password = "2ymsc7";
         String sourceId = "106908887002";
-        int timestamp =  TimeUtils.getTimestamp();
+        int timestamp = TimeUtils.getTimestamp();
         //
         ItioClient client = new ItioClient();
-        client.setIoThreads(1);
+        client.option(ChannelOption.SO_RCVBUF, 512);
+//        client.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(13));
         client.registerCodecHandler(new CmppMessageCodec());
         client.registerCodecHandler(ch -> new ActiveTestRequestHandler());
         client.registerBizHandler(new ChannelInboundHandlerAdapter() {
@@ -59,9 +63,8 @@ public class CmppClientTests {
         connectRequest.setAuthenticatorSource(authenticatorSource);
         connectRequest.setTimestamp(timestamp);
         connectRequest.setVersion(CmppMessage.VERSION_20);
-        client.writeAndFlush(connectRequest);
         System.out.println("已请求");
-        ConnectResponse connectResponse = client.waitForResponse(ConnectResponse.class);
+        ConnectResponse connectResponse = client.writeWaitResponse(connectRequest, ConnectResponse.class);
         System.out.println("已响应");
         System.out.println(connectResponse);
         AuthenticatorISMG authenticatorISMG = connectResponse.getAuthenticatorISMG();
@@ -81,14 +84,14 @@ public class CmppClientTests {
         submitRequest.setFeeUserType((short) 2);
         submitRequest.setDestTerminalIds(new String[]{"13924604900"});
 //        submitRequest.setMsgContent(MsgContent.fromText("【测试签名】测试信息", MsgFormat.UCS2));
-        submitRequest.setMsgContent(MsgContent.fromText("【测试签名】移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}", MsgFormat.UCS2));
+        submitRequest.setMsgContent(MsgContent.fromText("【测试签名】移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP" +
+                "短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}", MsgFormat.UCS2));
         // 长短信分割处理
-        List<SubmitRequest> splitSubmitRequests = LongSmsUtils.split(submitRequest);
-        for (SubmitRequest subSubmitRequest : splitSubmitRequests) {
-            client.writeAndFlush(subSubmitRequest).syncUninterruptibly();
-            System.out.println("提交请求：" + subSubmitRequest);
+        List<SubmitRequest> submitRequests = new ArrayList<>();
+        for (int i = 0; i < 1; i++) {
+            submitRequests.addAll(LongSmsUtils.split(submitRequest));
         }
-        List<SubmitResponse> submitResponses = client.waitForResponses(SubmitResponse.class, splitSubmitRequests.size());
+        List<SubmitResponse> submitResponses = client.writeWaitResponses(submitRequests, SubmitResponse.class);
         for (SubmitResponse submitResponse : submitResponses) {
             System.out.println("提交响应：" + submitResponse);
         }

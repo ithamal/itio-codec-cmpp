@@ -24,6 +24,7 @@ public class CmppServerTests {
         String password = "2ymsc7";
         //
         ItioServer server = new ItioServer();
+        server.setIoThreads(3);
         server.registerCodecHandler(ch -> new CmppMessageCodec());
         server.registerBizHandler(ch -> new ActiveTestRequestHandler());
         // 连接请求
@@ -44,10 +45,12 @@ public class CmppServerTests {
         });
         // 接受消息
         server.registerBizHandler(ch -> new SimpleChannelInboundHandler<SubmitRequest>() {
+
             @Override
             protected void channelRead0(ChannelHandlerContext ctx, SubmitRequest msg) throws Exception {
                 System.out.println("接收到消息:" + msg);
                 SubmitResponse response = new SubmitResponse(msg.getSequenceId());
+                response.setMsgId(msg.getMsgId());
                 ctx.writeAndFlush(response);
                 // 报告
                 if (msg.getRegisteredDelivery() == 1) {
