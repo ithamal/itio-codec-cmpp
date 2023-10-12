@@ -17,7 +17,7 @@ public class ActiveTestRequestHandler extends SimpleChannelInboundHandler<Active
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, ActiveTestRequest msg) throws Exception {
-         logger.info("active test message received.");
+         logger.debug("received an active test message from {}", ctx.channel());
         ctx.writeAndFlush(new ActiveTestResponse(msg.getSequenceId()));
     }
 }

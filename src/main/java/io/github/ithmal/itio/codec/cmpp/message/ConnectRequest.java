@@ -42,11 +42,12 @@ public class ConnectRequest extends CmppMessage {
 
     @Override
     public String toString() {
-        return "CmppConnectRequest{" +
+        return "ConnectRequest{" +
                 "sourceAddr='" + sourceAddr + '\'' +
                 ", authenticatorSource=" + authenticatorSource +
                 ", version=" + version +
                 ", timestamp=" + timestamp +
+                ", sequenceId=" + sequenceId +
                 '}';
     }
 }

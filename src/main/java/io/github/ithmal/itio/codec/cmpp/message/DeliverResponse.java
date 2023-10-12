@@ -35,4 +35,12 @@ public class DeliverResponse extends CmppMessage {
         super(Command.DELIVER_RESPONSE, sequenceId);
     }
 
+    @Override
+    public String toString() {
+        return "DeliverResponse{" +
+                "msgId=" + msgId +
+                ", result=" + result +
+                ", sequenceId=" + sequenceId +
+                '}';
+    }
 }

@@ -86,8 +86,9 @@ public class DeliverRequest extends CmppMessage {
                 ", tpPid=" + tpPid +
                 ", tpUdhi=" + tpUdhi +
                 ", srcTerminalId='" + srcTerminalId + '\'' +
-                ", content=" + msgContent +
+                ", msgContent=" + msgContent +
                 ", report=" + report +
+                ", sequenceId=" + sequenceId +
                 '}';
     }
 }

@@ -71,4 +71,22 @@ public class QueryResponse extends CmppMessage {
     public QueryResponse(int sequenceId) {
         super(Command.QUERY_RESPONSE, sequenceId);
     }
+
+    @Override
+    public String toString() {
+        return "QueryResponse{" +
+                "time='" + time + '\'' +
+                ", queryType=" + queryType +
+                ", queryCode='" + queryCode + '\'' +
+                ", mtTotalMsg=" + mtTotalMsg +
+                ", mtTotalUser=" + mtTotalUser +
+                ", mtSuccess=" + mtSuccess +
+                ", mtWait=" + mtWait +
+                ", mtFail=" + mtFail +
+                ", moSuccess=" + moSuccess +
+                ", moWait=" + moWait +
+                ", moFail=" + moFail +
+                ", sequenceId=" + sequenceId +
+                '}';
+    }
 }

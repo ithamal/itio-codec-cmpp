@@ -12,4 +12,11 @@ public class TerminateRequest extends CmppMessage {
     public TerminateRequest(int sequenceId) {
         super(Command.TERMINATE_REQUEST, sequenceId);
     }
+
+    @Override
+    public String toString() {
+        return "TerminateRequest{" +
+                "sequenceId=" + sequenceId +
+                '}';
+    }
 }

@@ -151,14 +151,26 @@ public class SubmitRequest extends CmppMessage {
 
     @Override
     public String toString() {
-        return "CmppSubmitRequest{" +
-                "sequenceId=" + getSequenceId() +
-                ",msgId=" + msgId +
+        return "SubmitRequest{" +
+                "msgId=" + msgId +
                 ", pkTotal=" + pkTotal +
                 ", pkNumber=" + pkNumber +
                 ", registeredDelivery=" + registeredDelivery +
+                ", msgLevel=" + msgLevel +
+                ", serviceId='" + serviceId + '\'' +
+                ", feeUserType=" + feeUserType +
+                ", feeTerminalId='" + feeTerminalId + '\'' +
+                ", tpPid=" + tpPid +
+                ", tpUdhi=" + tpUdhi +
+                ", msgSrc='" + msgSrc + '\'' +
+                ", feeType='" + feeType + '\'' +
+                ", feeCode='" + feeCode + '\'' +
+                ", validTime='" + validTime + '\'' +
+                ", atTime='" + atTime + '\'' +
+                ", srcId='" + srcId + '\'' +
                 ", destTerminalIds=" + Arrays.toString(destTerminalIds) +
-                ", content=" + msgContent +
+                ", msgContent=" + msgContent +
+                ", sequenceId=" + sequenceId +
                 '}';
     }
 }

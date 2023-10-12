@@ -41,9 +41,10 @@ public class SubmitResponse extends CmppMessage {
 
     @Override
     public String toString() {
-        return "CmppSubmitResponse{" +
+        return "SubmitResponse{" +
                 "msgId=" + msgId +
                 ", result=" + result +
+                ", sequenceId=" + sequenceId +
                 '}';
     }
 }

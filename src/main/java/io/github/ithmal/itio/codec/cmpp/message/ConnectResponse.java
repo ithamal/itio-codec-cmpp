@@ -47,6 +47,7 @@ public class ConnectResponse extends CmppMessage {
                 "status=" + status +
                 ", authenticatorISMG=" + authenticatorISMG +
                 ", version=" + version +
+                ", sequenceId=" + sequenceId +
                 '}';
     }
 }

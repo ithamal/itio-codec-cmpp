@@ -16,4 +16,11 @@ public class ActiveTestRequest extends CmppMessage {
     public ActiveTestRequest(int sequenceId) {
         super(Command.ACTIVE_TEST_REQUEST, sequenceId);
     }
+
+    @Override
+    public String toString() {
+        return "ActiveTestRequest{" +
+                "sequenceId=" + sequenceId +
+                '}';
+    }
 }

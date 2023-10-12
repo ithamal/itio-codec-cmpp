@@ -32,4 +32,14 @@ public class QueryRequest extends CmppMessage {
     public QueryRequest(int sequenceId) {
         super(Command.QUERY_REQUEST, sequenceId);
     }
+
+    @Override
+    public String toString() {
+        return "QueryRequest{" +
+                "time='" + time + '\'' +
+                ", queryType=" + queryType +
+                ", queryCode='" + queryCode + '\'' +
+                ", sequenceId=" + sequenceId +
+                '}';
+    }
 }

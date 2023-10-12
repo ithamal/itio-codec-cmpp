@@ -23,4 +23,12 @@ public class CancelResponse extends CmppMessage {
     public CancelResponse(int sequenceId) {
         super(Command.CANCEL_RESPONSE, sequenceId);
     }
+
+    @Override
+    public String toString() {
+        return "CancelResponse{" +
+                "success=" + success +
+                ", sequenceId=" + sequenceId +
+                '}';
+    }
 }

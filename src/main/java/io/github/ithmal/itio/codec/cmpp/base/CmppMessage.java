@@ -11,7 +11,7 @@ import lombok.Setter;
 public abstract class CmppMessage {
 
     @Setter
-    private int sequenceId;
+    protected int sequenceId;
 
     private final Command command;
 

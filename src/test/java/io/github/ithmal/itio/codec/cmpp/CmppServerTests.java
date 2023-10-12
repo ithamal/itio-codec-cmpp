@@ -5,6 +5,7 @@ import io.github.ithmal.itio.codec.cmpp.base.*;
 import io.github.ithmal.itio.codec.cmpp.handler.ActiveTestRequestHandler;
 import io.github.ithmal.itio.codec.cmpp.handler.CmppMessageCodec;
 import io.github.ithmal.itio.codec.cmpp.message.*;
+import io.github.ithmal.itio.codec.cmpp.sequence.SequenceManager;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,7 @@ public class CmppServerTests {
         String sourceAddr = "301001";
         String password = "2ymsc7";
         //
+        SequenceManager sequenceManager = new SequenceManager();
         ItioServer server = new ItioServer();
         server.setIoThreads(3);
         server.registerCodecHandler(ch -> new CmppMessageCodec());
@@ -37,7 +39,6 @@ public class CmppServerTests {
                 short status = (short) (authenticatorSource.validate() ? 0 : 3);
                 ConnectResponse response = new ConnectResponse(msg.getSequenceId());
                 response.setVersion(msg.getVersion());
-                response.setSequenceId(1);
                 response.setStatus(status);
                 response.setAuthenticatorISMG(new AuthenticatorISMG(status, authenticatorSource, password));
                 ctx.writeAndFlush(response);
@@ -54,7 +55,7 @@ public class CmppServerTests {
                 ctx.writeAndFlush(response);
                 // 报告
                 if (msg.getRegisteredDelivery() == 1) {
-                    DeliverRequest deliverRequest = new DeliverRequest(1);
+                    DeliverRequest deliverRequest = new DeliverRequest(sequenceManager.nextValue());
                     deliverRequest.setMsgId(System.currentTimeMillis());
                     deliverRequest.setDestId(msg.getSrcId());
                     deliverRequest.setSrcTerminalId("100000");
@@ -63,7 +64,7 @@ public class CmppServerTests {
                 }
                 // 上行
                 if (msg.getRegisteredDelivery() == 1) {
-                    DeliverRequest deliverRequest = new DeliverRequest(2);
+                    DeliverRequest deliverRequest = new DeliverRequest(sequenceManager.nextValue());
                     deliverRequest.setMsgId(System.currentTimeMillis());
                     deliverRequest.setDestId(msg.getSrcId());
                     deliverRequest.setSrcTerminalId("100000");

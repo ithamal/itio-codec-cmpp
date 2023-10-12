@@ -8,6 +8,7 @@ import io.github.ithmal.itio.codec.cmpp.message.ConnectRequest;
 import io.github.ithmal.itio.codec.cmpp.message.ConnectResponse;
 import io.github.ithmal.itio.codec.cmpp.message.SubmitRequest;
 import io.github.ithmal.itio.codec.cmpp.message.SubmitResponse;
+import io.github.ithmal.itio.codec.cmpp.sequence.SequenceManager;
 import io.github.ithmal.itio.codec.cmpp.util.LongSmsUtils;
 import io.github.ithmal.itio.codec.cmpp.util.TimeUtils;
 import io.netty.channel.ChannelHandlerContext;
@@ -37,6 +38,7 @@ public class CmppClientTests {
         String sourceId = "106908887002";
         int timestamp = TimeUtils.getTimestamp();
         //
+        SequenceManager sequenceManager = new SequenceManager();
         ItioClient client = new ItioClient();
         client.option(ChannelOption.SO_RCVBUF, 512);
 //        client.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(13));
@@ -57,7 +59,7 @@ public class CmppClientTests {
         System.out.println("已打开连接");
         // 请求
         AuthenticatorSource authenticatorSource = new AuthenticatorSource(sourceAddr, password, timestamp);
-        ConnectRequest connectRequest = new ConnectRequest(1);
+        ConnectRequest connectRequest = new ConnectRequest(sequenceManager.nextValue());
         connectRequest.setSourceAddr(sourceAddr);
         connectRequest.setSequenceId(1);
         connectRequest.setAuthenticatorSource(authenticatorSource);
@@ -74,7 +76,7 @@ public class CmppClientTests {
         if (connectResponse.getStatus() == 0) {
             System.out.println("连接成功");
         }
-        SubmitRequest submitRequest = new SubmitRequest(2);
+        SubmitRequest submitRequest = new SubmitRequest(sequenceManager.nextValue());
         submitRequest.setSrcId(sourceId);
         submitRequest.setMsgSrc(sourceAddr);
         submitRequest.setMsgId(System.currentTimeMillis());
@@ -89,7 +91,11 @@ public class CmppClientTests {
         // 长短信分割处理
         List<SubmitRequest> submitRequests = new ArrayList<>();
         for (int i = 0; i < 1; i++) {
-            submitRequests.addAll(LongSmsUtils.split(submitRequest));
+            int sequenceId = sequenceManager.nextValue();
+            for (SubmitRequest request : LongSmsUtils.split(submitRequest)) {
+                request.setSequenceId(sequenceId);
+                submitRequests.add(request);
+            }
         }
         List<SubmitResponse> submitResponses = client.writeWaitResponses(submitRequests, SubmitResponse.class);
         for (SubmitResponse submitResponse : submitResponses) {
