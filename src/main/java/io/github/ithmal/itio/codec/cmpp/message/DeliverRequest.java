@@ -2,8 +2,8 @@ package io.github.ithmal.itio.codec.cmpp.message;
 
 import io.github.ithmal.itio.codec.cmpp.base.CmppMessage;
 import io.github.ithmal.itio.codec.cmpp.base.Command;
-import io.github.ithmal.itio.codec.cmpp.base.MsgContent;
-import io.github.ithmal.itio.codec.cmpp.base.MsgReport;
+import io.github.ithmal.itio.codec.cmpp.content.MsgReport;
+import io.github.ithmal.itio.codec.cmpp.content.ShortMsgContent;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -53,7 +53,7 @@ public class DeliverRequest extends CmppMessage {
      * 内容
      * 状态报告时为空
      */
-    private MsgContent msgContent;
+    private ShortMsgContent msgContent;
 
     /**
      * 报告

@@ -2,6 +2,8 @@ package io.github.ithmal.itio.codec.cmpp;
 
 import io.github.ithaml.itio.server.ItioServer;
 import io.github.ithmal.itio.codec.cmpp.base.*;
+import io.github.ithmal.itio.codec.cmpp.content.MsgFormat;
+import io.github.ithmal.itio.codec.cmpp.content.MsgReport;
 import io.github.ithmal.itio.codec.cmpp.content.ShortMsgContent;
 import io.github.ithmal.itio.codec.cmpp.handler.ActiveTestRequestHandler;
 import io.github.ithmal.itio.codec.cmpp.handler.CmppMessageCodec;

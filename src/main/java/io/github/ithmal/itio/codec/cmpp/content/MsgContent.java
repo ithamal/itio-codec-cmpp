@@ -1,4 +1,4 @@
-package io.github.ithmal.itio.codec.cmpp.base;
+package io.github.ithmal.itio.codec.cmpp.content;
 
 import io.netty.buffer.ByteBuf;
 
@@ -13,6 +13,8 @@ public interface MsgContent {
    int getMsgLength();
 
    void output(ByteBuf out);
+
+   String getText();
 
    boolean validate();
 }

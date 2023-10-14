@@ -2,12 +2,12 @@ package io.github.ithmal.itio.codec.cmpp;
 
 import io.github.ithaml.itio.client.ItioClient;
 import io.github.ithmal.itio.codec.cmpp.base.*;
+import io.github.ithmal.itio.codec.cmpp.content.LongSmsContent;
+import io.github.ithmal.itio.codec.cmpp.content.MsgFormat;
+import io.github.ithmal.itio.codec.cmpp.content.ShortMsgContent;
 import io.github.ithmal.itio.codec.cmpp.handler.ActiveTestRequestHandler;
 import io.github.ithmal.itio.codec.cmpp.handler.CmppMessageCodec;
-import io.github.ithmal.itio.codec.cmpp.message.ConnectRequest;
-import io.github.ithmal.itio.codec.cmpp.message.ConnectResponse;
-import io.github.ithmal.itio.codec.cmpp.message.SubmitRequest;
-import io.github.ithmal.itio.codec.cmpp.message.SubmitResponse;
+import io.github.ithmal.itio.codec.cmpp.message.*;
 import io.github.ithmal.itio.codec.cmpp.sequence.SequenceManager;
 import io.github.ithmal.itio.codec.cmpp.util.LongSmsUtils;
 import io.github.ithmal.itio.codec.cmpp.util.TimeUtils;
@@ -17,6 +17,7 @@ import io.netty.channel.ChannelOption;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -79,20 +80,32 @@ public class CmppClientTests {
         String text = "【测试签名】移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP" +
                 "短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}.";
         int sequenceId = sequenceManager.nextValue();
-        List<SubmitRequest> submitRequests = new ArrayList<>();
-        for (MsgContent msgContent : LongSmsUtils.fromText(text, MsgFormat.UCS2)) {
-            SubmitRequest submitRequest = new SubmitRequest(sequenceId);
-            submitRequest.setSrcId(sourceId);
-            submitRequest.setMsgSrc(sourceAddr);
-            submitRequest.setMsgId(System.currentTimeMillis());
-            submitRequest.setPkTotal((short) 1);
-            submitRequest.setPkNumber((short) 1);
-            submitRequest.setRegisteredDelivery((short) 1);
-            submitRequest.setFeeUserType((short) 2);
-            submitRequest.setDestTerminalIds(new String[]{"13924604900"});
-            submitRequest.setMsgContent(msgContent);
-            submitRequests.add(submitRequest);
-        }
+        long msgId = System.currentTimeMillis();
+//        List<SubmitRequest> submitRequests = new ArrayList<>();
+//        for (ShortMsgContent msgContent : LongSmsUtils.fromText(text, MsgFormat.UCS2)) {
+//            SubmitRequest submitRequest = new SubmitRequest(sequenceId);
+//            submitRequest.setSrcId(sourceId);
+//            submitRequest.setMsgSrc(sourceAddr);
+//            submitRequest.setMsgId(System.currentTimeMillis());
+//            submitRequest.setPkTotal((short) 1);
+//            submitRequest.setPkNumber((short) 1);
+//            submitRequest.setRegisteredDelivery((short) 1);
+//            submitRequest.setFeeUserType((short) 2);
+//            submitRequest.setDestTerminalIds(new String[]{"13924604900"});
+//            submitRequest.setMsgContent(msgContent);
+//            submitRequests.add(submitRequest);
+//        }
+        FullSubmitRequest fullSubmitRequest = new FullSubmitRequest();
+        fullSubmitRequest.setSequenceId(sequenceId);
+        fullSubmitRequest.setSrcId(sourceId);
+        fullSubmitRequest.setMsgSrc(sourceAddr);
+        fullSubmitRequest.setMsgId(System.currentTimeMillis());
+        fullSubmitRequest.setRegisteredDelivery((short) 1);
+        fullSubmitRequest.setFeeUserType((short) 2);
+        fullSubmitRequest.setDestTerminalIds(new String[]{"13924604900"});
+        fullSubmitRequest.setContent(LongSmsUtils.fromText(0, text, MsgFormat.UCS2));
+        Collection<SubmitRequest> submitRequests = fullSubmitRequest.toRequests();
+
         List<SubmitResponse> submitResponses = client.writeWaitResponses(submitRequests, SubmitResponse.class);
         for (SubmitResponse submitResponse : submitResponses) {
             System.out.println("提交响应：" + submitResponse);

@@ -1,4 +1,4 @@
-package io.github.ithmal.itio.codec.cmpp.base;
+package io.github.ithmal.itio.codec.cmpp.content;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

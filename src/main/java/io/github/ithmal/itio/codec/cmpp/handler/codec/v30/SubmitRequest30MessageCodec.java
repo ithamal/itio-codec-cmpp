@@ -1,7 +1,6 @@
 package io.github.ithmal.itio.codec.cmpp.handler.codec.v30;
 
-import io.github.ithmal.itio.codec.cmpp.base.MsgContent;
-import io.github.ithmal.itio.codec.cmpp.base.MsgFormat;
+import io.github.ithmal.itio.codec.cmpp.content.MsgFormat;
 import io.github.ithmal.itio.codec.cmpp.content.ShortMsgContent;
 import io.github.ithmal.itio.codec.cmpp.handler.IMessageCodec;
 import io.github.ithmal.itio.codec.cmpp.message.SubmitRequest;

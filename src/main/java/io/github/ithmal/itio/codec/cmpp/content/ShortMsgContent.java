@@ -1,8 +1,5 @@
 package io.github.ithmal.itio.codec.cmpp.content;
 
-import io.github.ithmal.itio.codec.cmpp.base.MsgContent;
-import io.github.ithmal.itio.codec.cmpp.base.MsgFormat;
-import io.github.ithmal.itio.codec.cmpp.base.UserDataHeader;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
@@ -31,6 +28,14 @@ public class ShortMsgContent implements MsgContent {
         return format;
     }
 
+    public static int getMsgLengthLimit(MsgFormat format) {
+        if (format.getId() == 0) {
+            return 159;
+        } else {
+            return 140;
+        }
+    }
+
     @Override
     public int getMsgLength() {
         if (header == null) {
@@ -40,15 +45,8 @@ public class ShortMsgContent implements MsgContent {
         }
     }
 
-    @Override
-    public void output(ByteBuf out) {
-        body.resetReaderIndex();
-        if (header != null) {
-            header.output(out);
-            out.writeBytes(body);
-        } else {
-            out.writeBytes(body);
-        }
+    public UserDataHeader getHeader() {
+        return header;
     }
 
     @Override
@@ -57,20 +55,35 @@ public class ShortMsgContent implements MsgContent {
     }
 
     @Override
+    public void output(ByteBuf out) {
+        if (header != null) {
+            header.output(out);
+            out.writeBytes(body.slice());
+        } else {
+            out.writeBytes(body.slice());
+        }
+    }
+
+    @Override
+    public String getText() {
+        return body.slice(0, body.capacity()).toString(format.getCharset());
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        if (body != null) {
+            ReferenceCountUtil.release(body);
+        }
+        super.finalize();
+    }
+
+    @Override
     public String toString() {
         return "ShortMsgContent{" +
                 "header=" + header +
                 ", format=" + format +
-                ", body=" + body.toString(format.getCharset()) +
+                ", body=" + getText() +
                 '}';
-    }
-
-    public static int getMsgLengthLimit(MsgFormat format) {
-        if (format.getId() == 0) {
-            return 159;
-        } else {
-            return 140;
-        }
     }
 
     public static ShortMsgContent fromText(String text, MsgFormat format) {
@@ -97,13 +110,5 @@ public class ShortMsgContent implements MsgContent {
             header = null;
         }
         return new ShortMsgContent(format, header, body);
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        if(body != null){
-            ReferenceCountUtil.release(body);
-        }
-        super.finalize();
     }
 }

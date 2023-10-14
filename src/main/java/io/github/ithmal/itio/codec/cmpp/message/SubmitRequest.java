@@ -2,7 +2,7 @@ package io.github.ithmal.itio.codec.cmpp.message;
 
 import io.github.ithmal.itio.codec.cmpp.base.CmppMessage;
 import io.github.ithmal.itio.codec.cmpp.base.Command;
-import io.github.ithmal.itio.codec.cmpp.base.MsgContent;
+import io.github.ithmal.itio.codec.cmpp.content.ShortMsgContent;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -120,12 +120,11 @@ public class SubmitRequest extends CmppMessage {
     /**
      * 信息长度(Msg_Fmt值为0时：<160个字节；其它<=140个字节)
      */
-    private MsgContent msgContent;
+    private ShortMsgContent msgContent;
 
     public SubmitRequest(int sequenceId) {
         super(Command.SUBMIT_REQUEST, sequenceId);
     }
-
 
     public SubmitRequest copy(){
         SubmitRequest newObj = new SubmitRequest(this.getSequenceId());

@@ -1,4 +1,4 @@
-package io.github.ithmal.itio.codec.cmpp.base;
+package io.github.ithmal.itio.codec.cmpp.content;
 
 import io.netty.buffer.ByteBuf;
 import lombok.AccessLevel;

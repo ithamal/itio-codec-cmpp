@@ -1,10 +1,9 @@
 package io.github.ithmal.itio.codec.cmpp.handler.codec.v20;
 
+import io.github.ithmal.itio.codec.cmpp.content.MsgFormat;
+import io.github.ithmal.itio.codec.cmpp.content.MsgReport;
 import io.github.ithmal.itio.codec.cmpp.content.ShortMsgContent;
 import io.github.ithmal.itio.codec.cmpp.handler.IMessageCodec;
-import io.github.ithmal.itio.codec.cmpp.base.MsgContent;
-import io.github.ithmal.itio.codec.cmpp.base.MsgFormat;
-import io.github.ithmal.itio.codec.cmpp.base.MsgReport;
 import io.github.ithmal.itio.codec.cmpp.message.DeliverRequest;
 import io.github.ithmal.itio.codec.cmpp.util.StringUtils;
 import io.netty.buffer.ByteBuf;
