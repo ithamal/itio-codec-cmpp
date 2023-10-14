@@ -14,13 +14,13 @@ public interface IMessageCodec<T extends CmppMessage> {
      * 解码
      *
      */
-    T decode(ChannelHandlerContext ctx, int sequenceId,  ByteBuf byteBuf) throws Exception;
+    T decode(ChannelHandlerContext ctx, int sequenceId,  ByteBuf in) throws Exception;
 
     /**
      * 编码
      *
      */
-    void encode(ChannelHandlerContext ctx, T msg, ByteBuf byteBuf) throws Exception;
+    void encode(ChannelHandlerContext ctx, T msg, ByteBuf out) throws Exception;
 
     /**
      * 获取主体长度

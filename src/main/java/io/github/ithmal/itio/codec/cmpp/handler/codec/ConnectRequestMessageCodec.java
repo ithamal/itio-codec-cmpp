@@ -18,25 +18,25 @@ import java.nio.charset.StandardCharsets;
 public class ConnectRequestMessageCodec implements IMessageCodec<ConnectRequest> {
 
     @Override
-    public ConnectRequest decode(ChannelHandlerContext ctx, int sequenceId, ByteBuf byteBuf) throws Exception {
+    public ConnectRequest decode(ChannelHandlerContext ctx, int sequenceId, ByteBuf in) throws Exception {
         byte[] authenticatorSourceBytes = new byte[16];
         ConnectRequest msg = new ConnectRequest(sequenceId);
-        msg.setSourceAddr(StringUtils.readString(byteBuf, 6, StandardCharsets.US_ASCII));
-        byteBuf.readBytes(authenticatorSourceBytes);
-        msg.setVersion(byteBuf.readByte());
-        msg.setTimestamp(byteBuf.readInt());
+        msg.setSourceAddr(StringUtils.readString(in, 6, StandardCharsets.US_ASCII));
+        in.readBytes(authenticatorSourceBytes);
+        msg.setVersion(in.readByte());
+        msg.setTimestamp(in.readInt());
         msg.setAuthenticatorSource(new AuthenticatorSource(msg.getTimestamp(), authenticatorSourceBytes));
         ctx.channel().attr(MessageCodecVersionAdapter.VERSION_ATTR_KEY).set(msg.getVersion());
         return msg;
     }
 
     @Override
-    public void encode(ChannelHandlerContext ctx, ConnectRequest msg, ByteBuf byteBuf) throws Exception {
+    public void encode(ChannelHandlerContext ctx, ConnectRequest msg, ByteBuf out) throws Exception {
         ctx.channel().attr(MessageCodecVersionAdapter.VERSION_ATTR_KEY).set(msg.getVersion());
-        byteBuf.writeBytes(StringUtils.toBytes(msg.getSourceAddr(), 6));
-        byteBuf.writeBytes(msg.getAuthenticatorSource().getDigestBytes());
-        byteBuf.writeByte(msg.getVersion());
-        byteBuf.writeInt(msg.getTimestamp());
+        out.writeBytes(StringUtils.toBytes(msg.getSourceAddr(), 6));
+        out.writeBytes(msg.getAuthenticatorSource().getDigestBytes());
+        out.writeByte(msg.getVersion());
+        out.writeInt(msg.getTimestamp());
     }
 
     @Override

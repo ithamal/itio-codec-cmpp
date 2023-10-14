@@ -29,20 +29,20 @@ public class MessageCodecVersionAdapter<T extends CmppMessage> implements IMessa
     }
 
     @Override
-    public T decode(ChannelHandlerContext ctx, int sequenceId, ByteBuf byteBuf) throws Exception {
+    public T decode(ChannelHandlerContext ctx, int sequenceId, ByteBuf in) throws Exception {
         if (isVersion2(ctx)) {
-            return v2Codec.decode(ctx, sequenceId, byteBuf);
+            return v2Codec.decode(ctx, sequenceId, in);
         } else {
-            return v3Codec.decode(ctx, sequenceId, byteBuf);
+            return v3Codec.decode(ctx, sequenceId, in);
         }
     }
 
     @Override
-    public void encode(ChannelHandlerContext ctx, T msg, ByteBuf byteBuf) throws Exception {
+    public void encode(ChannelHandlerContext ctx, T msg, ByteBuf out) throws Exception {
         if (isVersion2(ctx)) {
-            v2Codec.encode(ctx, msg, byteBuf);
+            v2Codec.encode(ctx, msg, out);
         } else {
-            v3Codec.encode(ctx, msg, byteBuf);
+            v3Codec.encode(ctx, msg, out);
         }
     }
 

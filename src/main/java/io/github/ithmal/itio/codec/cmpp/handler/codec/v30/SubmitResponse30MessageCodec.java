@@ -14,17 +14,17 @@ import io.netty.channel.ChannelHandlerContext;
 public class SubmitResponse30MessageCodec implements IMessageCodec<SubmitResponse> {
 
     @Override
-    public SubmitResponse decode(ChannelHandlerContext ctx, int sequenceId, ByteBuf byteBuf) throws Exception {
+    public SubmitResponse decode(ChannelHandlerContext ctx, int sequenceId, ByteBuf in) throws Exception {
         SubmitResponse msg = new SubmitResponse(sequenceId);
-        msg.setMsgId(byteBuf.readLong());
-        msg.setResult(byteBuf.readInt());
+        msg.setMsgId(in.readLong());
+        msg.setResult(in.readInt());
         return msg;
     }
 
     @Override
-    public void encode(ChannelHandlerContext ctx, SubmitResponse msg, ByteBuf byteBuf) throws Exception {
-        byteBuf.writeLong(msg.getMsgId());
-        byteBuf.writeInt(msg.getResult());
+    public void encode(ChannelHandlerContext ctx, SubmitResponse msg, ByteBuf out) throws Exception {
+        out.writeLong(msg.getMsgId());
+        out.writeInt(msg.getResult());
     }
 
     @Override

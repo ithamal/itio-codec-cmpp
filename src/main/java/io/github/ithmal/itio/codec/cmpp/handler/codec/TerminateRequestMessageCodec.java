@@ -14,12 +14,12 @@ import io.netty.channel.ChannelHandlerContext;
 public class TerminateRequestMessageCodec implements IMessageCodec<TerminateRequest> {
 
     @Override
-    public TerminateRequest decode(ChannelHandlerContext ctx, int sequenceId,  ByteBuf byteBuf) throws Exception {
+    public TerminateRequest decode(ChannelHandlerContext ctx, int sequenceId,  ByteBuf in) throws Exception {
         return new TerminateRequest(sequenceId);
     }
 
     @Override
-    public void encode(ChannelHandlerContext ctx, TerminateRequest msg, ByteBuf byteBuf) throws Exception {
+    public void encode(ChannelHandlerContext ctx, TerminateRequest msg, ByteBuf out) throws Exception {
 
     }
 

@@ -14,12 +14,12 @@ import io.netty.channel.ChannelHandlerContext;
 public class ActiveTestRequestMessageCodec implements IMessageCodec<ActiveTestRequest> {
 
     @Override
-    public ActiveTestRequest decode(ChannelHandlerContext ctx, int sequenceId,  ByteBuf byteBuf) throws Exception {
+    public ActiveTestRequest decode(ChannelHandlerContext ctx, int sequenceId,  ByteBuf in) throws Exception {
         return new ActiveTestRequest(sequenceId);
     }
 
     @Override
-    public void encode(ChannelHandlerContext ctx, ActiveTestRequest msg, ByteBuf byteBuf) throws Exception {
+    public void encode(ChannelHandlerContext ctx, ActiveTestRequest msg, ByteBuf out) throws Exception {
 
     }
 

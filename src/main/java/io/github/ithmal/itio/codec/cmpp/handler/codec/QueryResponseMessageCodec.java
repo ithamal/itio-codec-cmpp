@@ -17,35 +17,35 @@ import java.nio.charset.StandardCharsets;
 public class QueryResponseMessageCodec implements IMessageCodec<QueryResponse> {
 
     @Override
-    public QueryResponse decode(ChannelHandlerContext ctx, int sequenceId, ByteBuf byteBuf) throws Exception {
+    public QueryResponse decode(ChannelHandlerContext ctx, int sequenceId, ByteBuf in) throws Exception {
         QueryResponse msg = new QueryResponse(sequenceId);
-        msg.setTime(StringUtils.readString(byteBuf, 8, StandardCharsets.US_ASCII));
-        msg.setQueryType(byteBuf.readByte());
-        msg.setQueryCode(StringUtils.readString(byteBuf, 10, StandardCharsets.US_ASCII));
-        msg.setMtTotalMsg(byteBuf.readInt());
-        msg.setMtTotalUser(byteBuf.readInt());
-        msg.setMtSuccess(byteBuf.readInt());
-        msg.setMtWait(byteBuf.readInt());
-        msg.setMtFail(byteBuf.readInt());
-        msg.setMoSuccess(byteBuf.readInt());
-        msg.setMoWait(byteBuf.readInt());
-        msg.setMoFail(byteBuf.readInt());
+        msg.setTime(StringUtils.readString(in, 8, StandardCharsets.US_ASCII));
+        msg.setQueryType(in.readByte());
+        msg.setQueryCode(StringUtils.readString(in, 10, StandardCharsets.US_ASCII));
+        msg.setMtTotalMsg(in.readInt());
+        msg.setMtTotalUser(in.readInt());
+        msg.setMtSuccess(in.readInt());
+        msg.setMtWait(in.readInt());
+        msg.setMtFail(in.readInt());
+        msg.setMoSuccess(in.readInt());
+        msg.setMoWait(in.readInt());
+        msg.setMoFail(in.readInt());
         return msg;
     }
 
     @Override
-    public void encode(ChannelHandlerContext ctx, QueryResponse msg, ByteBuf byteBuf) throws Exception {
-        byteBuf.writeBytes(StringUtils.toBytes(msg.getTime(), 8));
-        byteBuf.writeByte(msg.getQueryType());
-        byteBuf.writeBytes(StringUtils.toBytes(msg.getQueryCode(), 10));
-        byteBuf.writeInt(msg.getMtTotalMsg());
-        byteBuf.writeInt(msg.getMtTotalUser());
-        byteBuf.writeInt(msg.getMtSuccess());
-        byteBuf.writeInt(msg.getMtWait());
-        byteBuf.writeInt(msg.getMtFail());
-        byteBuf.writeInt(msg.getMoSuccess());
-        byteBuf.writeInt(msg.getMoWait());
-        byteBuf.writeInt(msg.getMoFail());
+    public void encode(ChannelHandlerContext ctx, QueryResponse msg, ByteBuf out) throws Exception {
+        out.writeBytes(StringUtils.toBytes(msg.getTime(), 8));
+        out.writeByte(msg.getQueryType());
+        out.writeBytes(StringUtils.toBytes(msg.getQueryCode(), 10));
+        out.writeInt(msg.getMtTotalMsg());
+        out.writeInt(msg.getMtTotalUser());
+        out.writeInt(msg.getMtSuccess());
+        out.writeInt(msg.getMtWait());
+        out.writeInt(msg.getMtFail());
+        out.writeInt(msg.getMoSuccess());
+        out.writeInt(msg.getMoWait());
+        out.writeInt(msg.getMoFail());
 
     }
 

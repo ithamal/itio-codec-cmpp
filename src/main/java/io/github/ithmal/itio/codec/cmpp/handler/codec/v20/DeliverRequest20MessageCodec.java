@@ -1,5 +1,6 @@
 package io.github.ithmal.itio.codec.cmpp.handler.codec.v20;
 
+import io.github.ithmal.itio.codec.cmpp.content.ShortMsgContent;
 import io.github.ithmal.itio.codec.cmpp.handler.IMessageCodec;
 import io.github.ithmal.itio.codec.cmpp.base.MsgContent;
 import io.github.ithmal.itio.codec.cmpp.base.MsgFormat;
@@ -20,65 +21,66 @@ import java.nio.charset.StandardCharsets;
 public class DeliverRequest20MessageCodec implements IMessageCodec<DeliverRequest> {
 
     @Override
-    public DeliverRequest decode(ChannelHandlerContext ctx, int sequenceId,  ByteBuf byteBuf) throws Exception {
+    public DeliverRequest decode(ChannelHandlerContext ctx, int sequenceId,  ByteBuf in) throws Exception {
         DeliverRequest msg = new DeliverRequest(sequenceId);
-        msg.setMsgId(byteBuf.readLong());
-        msg.setDestId(StringUtils.readString(byteBuf, 21, StandardCharsets.US_ASCII));
-        msg.setServiceId(StringUtils.readString(byteBuf, 10, StandardCharsets.US_ASCII));
-        msg.setTpPid(byteBuf.readByte());
-        msg.setTpUdhi(byteBuf.readByte());
-        short msgFmt = byteBuf.readByte();
-        msg.setSrcTerminalId(StringUtils.readString(byteBuf, 21, StandardCharsets.US_ASCII));
-        short registeredDelivery = byteBuf.readByte();
+        msg.setMsgId(in.readLong());
+        msg.setDestId(StringUtils.readString(in, 21, StandardCharsets.US_ASCII));
+        msg.setServiceId(StringUtils.readString(in, 10, StandardCharsets.US_ASCII));
+        msg.setTpPid(in.readByte());
+        msg.setTpUdhi(in.readByte());
+        short msgFmt = in.readByte();
+        msg.setSrcTerminalId(StringUtils.readString(in, 21, StandardCharsets.US_ASCII));
+        short registeredDelivery = in.readByte();
         // 非报告
         if (registeredDelivery == 0) {
-            msg.setMsgContent(MsgContent.read(byteBuf, MsgFormat.of(msgFmt), msg.getTpUdhi()));
+            msg.setMsgContent(ShortMsgContent.read(in, MsgFormat.of(msgFmt), msg.getTpUdhi()));
         } else {
-            short msgLength = byteBuf.readByte();
+            short msgLength = in.readByte();
             MsgReport report = new MsgReport();
-            report.setMsgId(byteBuf.readLong());
-            report.setStat(StringUtils.readString(byteBuf, 7, StandardCharsets.US_ASCII));
-            report.setSubmitTime(StringUtils.readString(byteBuf, 10, StandardCharsets.US_ASCII));
-            report.setDoneTime(StringUtils.readString(byteBuf, 10, StandardCharsets.US_ASCII));
-            report.setDestTerminalId(StringUtils.readString(byteBuf, 21, StandardCharsets.US_ASCII));
-            report.setSmscSequence(byteBuf.readInt());
+            report.setMsgId(in.readLong());
+            report.setStat(StringUtils.readString(in, 7, StandardCharsets.US_ASCII));
+            report.setSubmitTime(StringUtils.readString(in, 10, StandardCharsets.US_ASCII));
+            report.setDoneTime(StringUtils.readString(in, 10, StandardCharsets.US_ASCII));
+            report.setDestTerminalId(StringUtils.readString(in, 21, StandardCharsets.US_ASCII));
+            report.setSmscSequence(in.readInt());
             msg.setReport(report);
         }
         byte[] reversed = new byte[8];
-        byteBuf.readBytes(reversed);
+        in.readBytes(reversed);
         return msg;
     }
 
     @Override
-    public void encode(ChannelHandlerContext ctx, DeliverRequest msg, ByteBuf byteBuf) throws Exception {
+    public void encode(ChannelHandlerContext ctx, DeliverRequest msg, ByteBuf out) throws Exception {
         assert msg.getMsgContent() != null || msg.getReport() != null;
         assert msg.getMsgContent() == null || msg.getMsgContent().validate();
-        byteBuf.writeLong(msg.getMsgId());
-        byteBuf.writeBytes(StringUtils.toBytes(msg.getDestId(), 21));
-        byteBuf.writeBytes(StringUtils.toBytes(msg.getServiceId(), 10));
-        byteBuf.writeByte(msg.getTpPid());
-        byteBuf.writeByte(msg.getTpUdhi());
+        out.writeLong(msg.getMsgId());
+        out.writeBytes(StringUtils.toBytes(msg.getDestId(), 21));
+        out.writeBytes(StringUtils.toBytes(msg.getServiceId(), 10));
+        out.writeByte(msg.getTpPid());
+        out.writeByte(msg.getTpUdhi());
         if (msg.getReport() == null) {
-            byteBuf.writeByte(msg.getMsgContent().getFormat().getId());
+            out.writeByte(msg.getMsgContent().getFormat().getId());
         } else {
-            byteBuf.writeByte(0);
+            out.writeByte(0);
         }
-        byteBuf.writeBytes(StringUtils.toBytes(msg.getSrcTerminalId(), 21));
-        byteBuf.writeByte(msg.getReport() == null ? 0 : 1);
+        out.writeBytes(StringUtils.toBytes(msg.getSrcTerminalId(), 21));
+        out.writeByte(msg.getReport() == null ? 0 : 1);
         // 非报告
         if (msg.getReport() == null) {
-            msg.getMsgContent().write(byteBuf);
+            out.writeByte(msg.getMsgContent().getMsgLength());
+            msg.getMsgContent().output(out);
         } else {
             MsgReport report = msg.getReport();
-            byteBuf.writeByte(report.getMsgLength());
-            byteBuf.writeLong(report.getMsgId());
-            byteBuf.writeBytes(StringUtils.toBytes(report.getStat(), 7));
-            byteBuf.writeBytes(StringUtils.toBytes(report.getSubmitTime(), 10));
-            byteBuf.writeBytes(StringUtils.toBytes(report.getDoneTime(), 10));
-            byteBuf.writeBytes(StringUtils.toBytes(report.getDestTerminalId(), 21));
-            byteBuf.writeInt(report.getSmscSequence());
+            out.writeByte(report.getMsgLength());
+            out.writeLong(report.getMsgId());
+            out.writeBytes(StringUtils.toBytes(report.getStat(), 7));
+            out.writeBytes(StringUtils.toBytes(report.getSubmitTime(), 10));
+            out.writeBytes(StringUtils.toBytes(report.getDoneTime(), 10));
+            out.writeBytes(StringUtils.toBytes(report.getDestTerminalId(), 21));
+            out.writeInt(report.getSmscSequence());
         }
-        byteBuf.writeBytes(new byte[8]);
+        out.writeBytes(new byte[8]);
     }
 
     @Override

@@ -14,15 +14,15 @@ import io.netty.channel.ChannelHandlerContext;
 public class CancelRequestMessageCodec implements IMessageCodec<CancelRequest> {
 
     @Override
-    public CancelRequest decode(ChannelHandlerContext ctx, int sequenceId,  ByteBuf byteBuf) throws Exception {
+    public CancelRequest decode(ChannelHandlerContext ctx, int sequenceId,  ByteBuf in) throws Exception {
         CancelRequest msg = new CancelRequest(sequenceId);
-        msg.setMsgId(byteBuf.readLong());
+        msg.setMsgId(in.readLong());
         return msg;
     }
 
     @Override
-    public void encode(ChannelHandlerContext ctx, CancelRequest msg, ByteBuf byteBuf) throws Exception {
-        byteBuf.writeLong(msg.getMsgId());
+    public void encode(ChannelHandlerContext ctx, CancelRequest msg, ByteBuf out) throws Exception {
+        out.writeLong(msg.getMsgId());
     }
 
     @Override

@@ -15,21 +15,21 @@ import io.netty.channel.ChannelHandlerContext;
 public class ConnectResponse20MessageCodec implements IMessageCodec<ConnectResponse> {
 
     @Override
-    public ConnectResponse decode(ChannelHandlerContext ctx, int sequenceId, ByteBuf byteBuf) throws Exception {
+    public ConnectResponse decode(ChannelHandlerContext ctx, int sequenceId, ByteBuf in) throws Exception {
         byte[] authenticatorISMGBytes = new byte[16];
         ConnectResponse msg = new ConnectResponse(sequenceId);
-        msg.setStatus(byteBuf.readByte());
-        byteBuf.readBytes(authenticatorISMGBytes);
-        msg.setVersion(byteBuf.readByte());
+        msg.setStatus(in.readByte());
+        in.readBytes(authenticatorISMGBytes);
+        msg.setVersion(in.readByte());
         msg.setAuthenticatorISMG(new AuthenticatorISMG(msg.getStatus(), authenticatorISMGBytes));
         return msg;
     }
 
     @Override
-    public void encode(ChannelHandlerContext ctx, ConnectResponse msg, ByteBuf byteBuf) throws Exception {
-        byteBuf.writeByte(msg.getStatus());
-        byteBuf.writeBytes(msg.getAuthenticatorISMG().getDigestBytes());
-        byteBuf.writeByte(msg.getVersion());
+    public void encode(ChannelHandlerContext ctx, ConnectResponse msg, ByteBuf out) throws Exception {
+        out.writeByte(msg.getStatus());
+        out.writeBytes(msg.getAuthenticatorISMG().getDigestBytes());
+        out.writeByte(msg.getVersion());
     }
 
     @Override

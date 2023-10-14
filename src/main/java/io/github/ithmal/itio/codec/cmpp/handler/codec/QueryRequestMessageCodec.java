@@ -17,23 +17,23 @@ import java.nio.charset.StandardCharsets;
 public class QueryRequestMessageCodec implements IMessageCodec<QueryRequest> {
 
     @Override
-    public QueryRequest decode(ChannelHandlerContext ctx, int sequenceId,  ByteBuf byteBuf) throws Exception {
+    public QueryRequest decode(ChannelHandlerContext ctx, int sequenceId,  ByteBuf in) throws Exception {
         QueryRequest msg = new QueryRequest(sequenceId);
-        msg.setTime(StringUtils.readString(byteBuf, 8, StandardCharsets.US_ASCII));
-        msg.setQueryType(byteBuf.readByte());
-        msg.setTime(StringUtils.readString(byteBuf, 8, StandardCharsets.US_ASCII));
+        msg.setTime(StringUtils.readString(in, 8, StandardCharsets.US_ASCII));
+        msg.setQueryType(in.readByte());
+        msg.setTime(StringUtils.readString(in, 8, StandardCharsets.US_ASCII));
         byte[] reserve = new byte[8];
-        byteBuf.readBytes(reserve);
+        in.readBytes(reserve);
         return msg;
     }
 
     @Override
-    public void encode(ChannelHandlerContext ctx, QueryRequest msg, ByteBuf byteBuf) throws Exception {
-        byteBuf.writeBytes(StringUtils.toBytes(msg.getTime(), 8));
-        byteBuf.writeByte(msg.getQueryType());
-        byteBuf.writeBytes(StringUtils.toBytes(msg.getQueryCode(), 10));
+    public void encode(ChannelHandlerContext ctx, QueryRequest msg, ByteBuf out) throws Exception {
+        out.writeBytes(StringUtils.toBytes(msg.getTime(), 8));
+        out.writeByte(msg.getQueryType());
+        out.writeBytes(StringUtils.toBytes(msg.getQueryCode(), 10));
         byte[] reserve = new byte[8];
-        byteBuf.writeBytes(reserve);
+        out.writeBytes(reserve);
     }
 
     @Override

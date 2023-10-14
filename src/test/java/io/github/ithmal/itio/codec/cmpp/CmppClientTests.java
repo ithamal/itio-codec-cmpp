@@ -14,7 +14,6 @@ import io.github.ithmal.itio.codec.cmpp.util.TimeUtils;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.FixedRecvByteBufAllocator;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -76,31 +75,29 @@ public class CmppClientTests {
         if (connectResponse.getStatus() == 0) {
             System.out.println("连接成功");
         }
-        SubmitRequest submitRequest = new SubmitRequest(sequenceManager.nextValue());
-        submitRequest.setSrcId(sourceId);
-        submitRequest.setMsgSrc(sourceAddr);
-        submitRequest.setMsgId(System.currentTimeMillis());
-        submitRequest.setPkTotal((short) 1);
-        submitRequest.setPkNumber((short) 1);
-        submitRequest.setRegisteredDelivery((short) 1);
-        submitRequest.setFeeUserType((short) 2);
-        submitRequest.setDestTerminalIds(new String[]{"13924604900"});
-//        submitRequest.setMsgContent(MsgContent.fromText("【测试签名】测试信息", MsgFormat.UCS2));
-        submitRequest.setMsgContent(MsgContent.fromText("【测试签名】移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP" +
-                "短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}", MsgFormat.UCS2));
-        // 长短信分割处理
+//        String text = "【测试签名】测试信息";
+        String text = "【测试签名】移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP" +
+                "短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}.";
+        int sequenceId = sequenceManager.nextValue();
         List<SubmitRequest> submitRequests = new ArrayList<>();
-        for (int i = 0; i < 1; i++) {
-            int sequenceId = sequenceManager.nextValue();
-            for (SubmitRequest request : LongSmsUtils.split(submitRequest)) {
-                request.setSequenceId(sequenceId);
-                submitRequests.add(request);
-            }
+        for (MsgContent msgContent : LongSmsUtils.fromText(text, MsgFormat.UCS2)) {
+            SubmitRequest submitRequest = new SubmitRequest(sequenceId);
+            submitRequest.setSrcId(sourceId);
+            submitRequest.setMsgSrc(sourceAddr);
+            submitRequest.setMsgId(System.currentTimeMillis());
+            submitRequest.setPkTotal((short) 1);
+            submitRequest.setPkNumber((short) 1);
+            submitRequest.setRegisteredDelivery((short) 1);
+            submitRequest.setFeeUserType((short) 2);
+            submitRequest.setDestTerminalIds(new String[]{"13924604900"});
+            submitRequest.setMsgContent(msgContent);
+            submitRequests.add(submitRequest);
         }
         List<SubmitResponse> submitResponses = client.writeWaitResponses(submitRequests, SubmitResponse.class);
         for (SubmitResponse submitResponse : submitResponses) {
             System.out.println("提交响应：" + submitResponse);
         }
+        System.gc();
         TimeUnit.SECONDS.sleep(60);
         client.disconnect();
         System.out.println("已断开连接");

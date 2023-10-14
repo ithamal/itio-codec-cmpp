@@ -14,14 +14,14 @@ import io.netty.channel.ChannelHandlerContext;
 public class ActiveTestResponseMessageCodec implements IMessageCodec<ActiveTestResponse> {
 
     @Override
-    public ActiveTestResponse decode(ChannelHandlerContext ctx, int sequenceId,  ByteBuf byteBuf) throws Exception {
-        byteBuf.readByte();
+    public ActiveTestResponse decode(ChannelHandlerContext ctx, int sequenceId,  ByteBuf in) throws Exception {
+        in.readByte();
         return new ActiveTestResponse(sequenceId);
     }
 
     @Override
-    public void encode(ChannelHandlerContext ctx, ActiveTestResponse msg, ByteBuf byteBuf) throws Exception {
-        byteBuf.writeByte(0);
+    public void encode(ChannelHandlerContext ctx, ActiveTestResponse msg, ByteBuf out) throws Exception {
+        out.writeByte(0);
     }
 
     @Override

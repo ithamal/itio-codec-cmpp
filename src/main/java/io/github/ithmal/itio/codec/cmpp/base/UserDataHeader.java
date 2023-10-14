@@ -81,6 +81,10 @@ public class UserDataHeader {
         return udhi;
     }
 
+    public void output(ByteBuf out){
+        out.writeBytes(getBytes());
+    }
+
     public short getMsgLength() {
         return (short) (len + 1);
     }

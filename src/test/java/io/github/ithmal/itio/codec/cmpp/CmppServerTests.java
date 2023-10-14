@@ -2,6 +2,7 @@ package io.github.ithmal.itio.codec.cmpp;
 
 import io.github.ithaml.itio.server.ItioServer;
 import io.github.ithmal.itio.codec.cmpp.base.*;
+import io.github.ithmal.itio.codec.cmpp.content.ShortMsgContent;
 import io.github.ithmal.itio.codec.cmpp.handler.ActiveTestRequestHandler;
 import io.github.ithmal.itio.codec.cmpp.handler.CmppMessageCodec;
 import io.github.ithmal.itio.codec.cmpp.message.*;
@@ -68,7 +69,7 @@ public class CmppServerTests {
                     deliverRequest.setMsgId(System.currentTimeMillis());
                     deliverRequest.setDestId(msg.getSrcId());
                     deliverRequest.setSrcTerminalId("100000");
-                    deliverRequest.setMsgContent(MsgContent.fromText("回复短信X", MsgFormat.UCS2));
+                    deliverRequest.setMsgContent(ShortMsgContent.fromText("回复短信X", MsgFormat.UCS2));
                     ctx.writeAndFlush(deliverRequest);
                 }
             }
