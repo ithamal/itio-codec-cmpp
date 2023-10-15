@@ -1,14 +1,20 @@
 package io.github.ithmal.itio.codec.cmpp;
 
 import io.github.ithaml.itio.server.ItioServer;
-import io.github.ithmal.itio.codec.cmpp.base.*;
+import io.github.ithmal.itio.codec.cmpp.base.AuthenticatorISMG;
+import io.github.ithmal.itio.codec.cmpp.base.AuthenticatorSource;
+import io.github.ithmal.itio.codec.cmpp.base.ConnectResult;
+import io.github.ithmal.itio.codec.cmpp.base.DeliverStatus;
+import io.github.ithmal.itio.codec.cmpp.content.MsgContentSlice;
 import io.github.ithmal.itio.codec.cmpp.content.MsgFormat;
 import io.github.ithmal.itio.codec.cmpp.content.MsgReport;
 import io.github.ithmal.itio.codec.cmpp.content.ShortMsgContent;
 import io.github.ithmal.itio.codec.cmpp.handler.ActiveTestRequestHandler;
 import io.github.ithmal.itio.codec.cmpp.handler.CmppMessageCodec;
+import io.github.ithmal.itio.codec.cmpp.handler.LongSmsAggregateHandler;
 import io.github.ithmal.itio.codec.cmpp.message.*;
 import io.github.ithmal.itio.codec.cmpp.sequence.SequenceManager;
+import io.github.ithmal.itio.codec.cmpp.store.MemoryLongSmsAssembler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.junit.jupiter.api.Test;
@@ -23,7 +29,7 @@ public class CmppServerTests {
 
     @Test
     public void testListen() throws InterruptedException {
-        int port =  7890;
+        int port = 7890;
         String sourceAddr = "301001";
         String password = "2ymsc7";
         //
@@ -31,6 +37,8 @@ public class CmppServerTests {
         ItioServer server = new ItioServer();
         server.setIoThreads(3);
         server.registerCodecHandler(ch -> new CmppMessageCodec());
+        server.registerCodecHandler(ch -> new LongSmsAggregateHandler(ch, new MemoryLongSmsAssembler<>(300),
+                new MemoryLongSmsAssembler<>(300)));
         server.registerBizHandler(ch -> new ActiveTestRequestHandler());
         // 连接请求
         server.registerBizHandler(ch -> new SimpleChannelInboundHandler<ConnectRequest>() {
@@ -39,7 +47,7 @@ public class CmppServerTests {
                 AuthenticatorSource authenticatorSource = msg.getAuthenticatorSource();
                 authenticatorSource.setSourceAddr(sourceAddr);
                 authenticatorSource.setPassword(password);
-                short status = (short) (authenticatorSource.validate() ? 0 : 3);
+                short status = (authenticatorSource.validate() ? ConnectResult.OK : ConnectResult.AUTH_ERR).getCode();
                 ConnectResponse response = new ConnectResponse(msg.getSequenceId());
                 response.setVersion(msg.getVersion());
                 response.setStatus(status);
@@ -48,14 +56,16 @@ public class CmppServerTests {
             }
         });
         // 接受消息
-        server.registerBizHandler(ch -> new SimpleChannelInboundHandler<SubmitRequest>() {
-
+        server.registerBizHandler(ch -> new SimpleChannelInboundHandler<FullSubmitRequest>() {
             @Override
-            protected void channelRead0(ChannelHandlerContext ctx, SubmitRequest msg) throws Exception {
+            protected void channelRead0(ChannelHandlerContext ctx, FullSubmitRequest msg) throws Exception {
                 System.out.println("接收到消息:" + msg);
-                SubmitResponse response = new SubmitResponse(msg.getSequenceId());
-                response.setMsgId(msg.getMsgId());
-                ctx.writeAndFlush(response);
+                // 响应
+                for (MsgContentSlice slice : msg.getContent().getSlices()) {
+                    SubmitResponse response = new SubmitResponse(msg.getSequenceId());
+                    response.setMsgId(slice.getMsgId());
+                    ctx.writeAndFlush(response);
+                }
                 // 报告
                 if (msg.getRegisteredDelivery() == 1) {
                     DeliverRequest deliverRequest = new DeliverRequest(sequenceManager.nextValue());

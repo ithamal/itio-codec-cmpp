@@ -4,6 +4,7 @@ import io.github.ithmal.itio.codec.cmpp.content.*;
 import lombok.Data;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -113,6 +114,29 @@ public class FullSubmitRequest {
      */
     private LongSmsContent content;
 
+    @Override
+    public String toString() {
+        return "FullSubmitRequest{" +
+                "sequenceId=" + sequenceId +
+                ", msgId=" + msgId +
+                ", registeredDelivery=" + registeredDelivery +
+                ", msgLevel=" + msgLevel +
+                ", serviceId='" + serviceId + '\'' +
+                ", feeUserType=" + feeUserType +
+                ", feeTerminalId='" + feeTerminalId + '\'' +
+                ", tpPid=" + tpPid +
+                ", tpUdhi=" + tpUdhi +
+                ", msgSrc='" + msgSrc + '\'' +
+                ", feeType='" + feeType + '\'' +
+                ", feeCode='" + feeCode + '\'' +
+                ", validTime='" + validTime + '\'' +
+                ", atTime='" + atTime + '\'' +
+                ", srcId='" + srcId + '\'' +
+                ", destTerminalIds=" + Arrays.toString(destTerminalIds) +
+                ", content=" + content +
+                '}';
+    }
+
     /**
      * 分拆请求
      *
@@ -120,11 +144,11 @@ public class FullSubmitRequest {
      */
     public Collection<SubmitRequest> toRequests() {
         List<SubmitRequest> requests = new ArrayList<>(content.getPkTotal());
-        for (MsgContentPart part : content.getParts()) {
-            ShortMsgContent msgContent = part.getContent();
+        for (MsgContentSlice slice : content.getSlices()) {
+            ShortMsgContent msgContent = slice.getContent();
             UserDataHeader header = msgContent.getHeader();
             SubmitRequest request = new SubmitRequest(this.sequenceId);
-            request.setMsgId(part.getMsgId() == 0 ? this.msgId : part.getMsgId());
+            request.setMsgId(slice.getMsgId() == 0 ? this.msgId : slice.getMsgId());
             request.setTpUdhi(requests.size() > 1 ? (short) 1 : 0);
             request.setTpPid(this.tpPid);
             request.setTpUdhi(header != null ? 1: this.tpUdhi);
@@ -192,9 +216,8 @@ public class FullSubmitRequest {
             if (content.getFormat() != msgFormat) {
                 throw new IllegalArgumentException("content format is inconsistent: " + msgFormat + "," + content.getFormat());
             }
-            UserDataHeader header = content.getHeader();
-            short pkNumber = header.getPkNumber();
-            longSmsContent.append(new MsgContentPart(msgId, pkNumber, content));
+            short pkNumber = pkTotal == 1? 1: content.getHeader().getPkNumber();
+            longSmsContent.append(new MsgContentSlice(msgId, pkNumber, content));
         }
         return longSmsContent;
     }

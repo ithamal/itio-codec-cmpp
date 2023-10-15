@@ -9,11 +9,20 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-public class MsgContentPart {
+public class MsgContentSlice {
 
     private final long msgId;
 
     private final short pkNumber;
 
     private final ShortMsgContent content;
+
+    @Override
+    public String toString() {
+        return "MsgContentSlice{" +
+                "msgId=" + msgId +
+                ", pkNumber=" + pkNumber +
+                ", content=" + content +
+                '}';
+    }
 }

@@ -61,6 +61,21 @@ public class FullDeliverRequest {
      */
     private LongSmsContent content;
 
+    @Override
+    public String toString() {
+        return "FullDeliverRequest{" +
+                "sequenceId=" + sequenceId +
+                ", msgId=" + msgId +
+                ", destId='" + destId + '\'' +
+                ", serviceId='" + serviceId + '\'' +
+                ", tpPid=" + tpPid +
+                ", tpUdhi=" + tpUdhi +
+                ", srcTerminalId='" + srcTerminalId + '\'' +
+                ", report=" + report +
+                ", content=" + content +
+                '}';
+    }
+
     /**
      * 分拆请求
      *
@@ -83,14 +98,14 @@ public class FullDeliverRequest {
         // 内容
         if (content != null) {
             List<DeliverRequest> requests = new ArrayList<>(content.getPkTotal());
-            for (MsgContentPart part : content.getParts()) {
-                UserDataHeader header = part.getContent().getHeader();
+            for (MsgContentSlice slice : content.getSlices()) {
+                UserDataHeader header = slice.getContent().getHeader();
                 DeliverRequest request = new DeliverRequest(this.sequenceId);
-                request.setMsgId(part.getMsgId() == 0 ? this.msgId : part.getMsgId());
+                request.setMsgId(slice.getMsgId() == 0 ? this.msgId : slice.getMsgId());
                 request.setSequenceId(this.sequenceId);
                 request.setTpPid(this.tpPid);
                 request.setTpUdhi(header != null ? 1 : this.tpUdhi);
-                request.setMsgContent(part.getContent());
+                request.setMsgContent(slice.getContent());
                 request.setServiceId(this.serviceId);
                 request.setSrcTerminalId(this.srcTerminalId);
                 request.setDestId(this.destId);
@@ -146,8 +161,8 @@ public class FullDeliverRequest {
             if (content.getFormat() != msgFormat) {
                 throw new IllegalArgumentException("content format is inconsistent: " + msgFormat + "," + content.getFormat());
             }
-            short pkNumber = content.getHeader().getPkNumber();
-            longSmsContent.append(new MsgContentPart(msgId, pkNumber, content));
+            short pkNumber = pkTotal == 1 ? 1 : content.getHeader().getPkNumber();
+            longSmsContent.append(new MsgContentSlice(msgId, pkNumber, content));
         }
         return longSmsContent;
     }

@@ -1,14 +1,16 @@
 package io.github.ithmal.itio.codec.cmpp;
 
 import io.github.ithaml.itio.client.ItioClient;
-import io.github.ithmal.itio.codec.cmpp.base.*;
-import io.github.ithmal.itio.codec.cmpp.content.LongSmsContent;
+import io.github.ithmal.itio.codec.cmpp.base.AuthenticatorISMG;
+import io.github.ithmal.itio.codec.cmpp.base.AuthenticatorSource;
+import io.github.ithmal.itio.codec.cmpp.base.CmppMessage;
 import io.github.ithmal.itio.codec.cmpp.content.MsgFormat;
-import io.github.ithmal.itio.codec.cmpp.content.ShortMsgContent;
 import io.github.ithmal.itio.codec.cmpp.handler.ActiveTestRequestHandler;
 import io.github.ithmal.itio.codec.cmpp.handler.CmppMessageCodec;
+import io.github.ithmal.itio.codec.cmpp.handler.LongSmsAggregateHandler;
 import io.github.ithmal.itio.codec.cmpp.message.*;
 import io.github.ithmal.itio.codec.cmpp.sequence.SequenceManager;
+import io.github.ithmal.itio.codec.cmpp.store.MemoryLongSmsAssembler;
 import io.github.ithmal.itio.codec.cmpp.util.LongSmsUtils;
 import io.github.ithmal.itio.codec.cmpp.util.TimeUtils;
 import io.netty.channel.ChannelHandlerContext;
@@ -16,7 +18,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOption;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +45,8 @@ public class CmppClientTests {
         client.option(ChannelOption.SO_RCVBUF, 512);
 //        client.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(13));
         client.registerCodecHandler(new CmppMessageCodec());
+        client.registerCodecHandler(ch -> new LongSmsAggregateHandler(ch, new MemoryLongSmsAssembler<>(300),
+                new MemoryLongSmsAssembler<>(300)));
         client.registerCodecHandler(ch -> new ActiveTestRequestHandler());
         client.registerBizHandler(new ChannelInboundHandlerAdapter() {
             @Override
@@ -76,9 +80,9 @@ public class CmppClientTests {
         if (connectResponse.getStatus() == 0) {
             System.out.println("连接成功");
         }
-//        String text = "【测试签名】测试信息";
-        String text = "【测试签名】移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP" +
-                "短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}.";
+        String text = "【测试签名】测试信息";
+//        String text = "【测试签名】移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP" +
+//                "短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}.";
         int sequenceId = sequenceManager.nextValue();
         long msgId = System.currentTimeMillis();
 //        List<SubmitRequest> submitRequests = new ArrayList<>();
@@ -106,7 +110,8 @@ public class CmppClientTests {
         fullSubmitRequest.setContent(LongSmsUtils.fromText(0, text, MsgFormat.UCS2));
         Collection<SubmitRequest> submitRequests = fullSubmitRequest.toRequests();
 
-        List<SubmitResponse> submitResponses = client.writeWaitResponses(submitRequests, SubmitResponse.class);
+        List<SubmitResponse> submitResponses = client.writeWaitResponses(Arrays.asList(fullSubmitRequest), SubmitResponse.class , 0, submitRequests.size());
+//        List<SubmitResponse> submitResponses = client.writeWaitResponses(submitRequests, SubmitResponse.class);
         for (SubmitResponse submitResponse : submitResponses) {
             System.out.println("提交响应：" + submitResponse);
         }

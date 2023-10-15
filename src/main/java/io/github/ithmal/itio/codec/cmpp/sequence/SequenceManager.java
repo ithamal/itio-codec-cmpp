@@ -11,7 +11,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class SequenceManager {
 
-    private AtomicInteger offset = new AtomicInteger();
+    private AtomicInteger offset ;
+
+    public SequenceManager(){
+        this(0);
+    }
+
+    public SequenceManager(int initialValue){
+        offset = new AtomicInteger(initialValue);
+    }
 
     public int nextValue() {
         return offset.accumulateAndGet(1, (prev, x) -> {
