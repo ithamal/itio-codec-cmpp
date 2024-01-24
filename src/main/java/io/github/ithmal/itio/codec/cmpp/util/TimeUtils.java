@@ -11,8 +11,7 @@ import java.util.Date;
 public final class TimeUtils {
 
     public static int getTimestamp() {
-        String str = new SimpleDateFormat("MMddHHmmss").format(new Date());
-        return Integer.parseInt(str);
+        return (int) Math.floor(System.currentTimeMillis() / 1000L);
     }
 
 }

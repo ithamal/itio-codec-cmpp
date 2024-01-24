@@ -38,4 +38,14 @@ public class StringUtils {
         return new String(chars);
     }
 
+    public static String leftPad(String str, int length, char ch) {
+        if(str.length() == length) {
+            return str;
+        }
+        StringBuilder sb = new StringBuilder(str);
+        for (int i = str.length(); i < length; i++) {
+            sb.insert(0, ch);
+        }
+        return sb.toString();
+    }
 }

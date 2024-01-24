@@ -1,6 +1,7 @@
 package io.github.ithmal.itio.codec.cmpp.base;
 
 import io.github.ithmal.itio.codec.cmpp.util.ByteUtils;
+import io.github.ithmal.itio.codec.cmpp.util.StringUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -52,10 +53,11 @@ public class AuthenticatorSource {
 
     @SneakyThrows
     private byte[] generateDigestBytes() {
+        String timestampStr = StringUtils.leftPad(String.valueOf(timestamp), 10, '0');
         Charset charset = StandardCharsets.US_ASCII;
         byte[] sourceAddrBytes = sourceAddr.getBytes(charset);
         byte[] passwordBytes = password.getBytes(charset);
-        byte[] timestampBytes = String.valueOf(timestamp).getBytes(charset);
+        byte[] timestampBytes = ByteUtils.ensureLength(timestampStr.getBytes(charset), 10);
         byte[] bytes = ByteUtils.concat(sourceAddrBytes, new byte[9], passwordBytes, timestampBytes);
         MessageDigest digest = MessageDigest.getInstance("MD5");
         return digest.digest(bytes);
