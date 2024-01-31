@@ -1,6 +1,7 @@
 package io.github.ithmal.itio.codec.cmpp.message;
 
 import io.github.ithmal.itio.codec.cmpp.content.*;
+import io.github.ithmal.itio.codec.cmpp.sequence.SequenceManager;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -14,11 +15,6 @@ import java.util.List;
  */
 @Data
 public class FullSubmitRequest {
-
-    /**
-     * 序号
-     */
-    private int sequenceId;
 
     /**
      * 信息标识，由SP侧短信网关本身产生
@@ -117,7 +113,6 @@ public class FullSubmitRequest {
     @Override
     public String toString() {
         return "FullSubmitRequest{" +
-                "sequenceId=" + sequenceId +
                 ", msgId=" + msgId +
                 ", registeredDelivery=" + registeredDelivery +
                 ", msgLevel=" + msgLevel +
@@ -145,9 +140,12 @@ public class FullSubmitRequest {
     public Collection<SubmitRequest> toRequests() {
         List<SubmitRequest> requests = new ArrayList<>(content.getPkTotal());
         for (MsgContentSlice slice : content.getSlices()) {
+            if(slice.getSequenceId() == 0){
+                throw new IllegalArgumentException();
+            }
             ShortMsgContent msgContent = slice.getContent();
             UserDataHeader header = msgContent.getHeader();
-            SubmitRequest request = new SubmitRequest(this.sequenceId);
+            SubmitRequest request = new SubmitRequest(slice.getSequenceId());
             request.setMsgId(slice.getMsgId() == 0 ? this.msgId : slice.getMsgId());
             request.setTpUdhi(requests.size() > 1 ? (short) 1 : 0);
             request.setTpPid(this.tpPid);
@@ -180,7 +178,6 @@ public class FullSubmitRequest {
     public static FullSubmitRequest fromRequests(Collection<SubmitRequest> requests) {
         FullSubmitRequest fullRequest = new FullSubmitRequest();
         SubmitRequest request = requests.iterator().next();
-        fullRequest.sequenceId = request.getSequenceId();
         fullRequest.msgId = request.getMsgId();
         fullRequest.tpPid = request.getTpPid();
         fullRequest.tpUdhi = request.getTpUdhi();
@@ -211,13 +208,12 @@ public class FullSubmitRequest {
         MsgFormat msgFormat = firstRequest.getMsgContent().getFormat();
         LongSmsContent longSmsContent = new LongSmsContent(msgFormat, pkTotal);
         for (SubmitRequest request : requests) {
-            long msgId = request.getMsgId();
             ShortMsgContent content = request.getMsgContent();
             if (content.getFormat() != msgFormat) {
                 throw new IllegalArgumentException("content format is inconsistent: " + msgFormat + "," + content.getFormat());
             }
             short pkNumber = pkTotal == 1? 1: content.getHeader().getPkNumber();
-            longSmsContent.append(new MsgContentSlice(msgId, pkNumber, content));
+            longSmsContent.append(new MsgContentSlice(request.getSequenceId(), request.getMsgId(), pkNumber, content));
         }
         return longSmsContent;
     }

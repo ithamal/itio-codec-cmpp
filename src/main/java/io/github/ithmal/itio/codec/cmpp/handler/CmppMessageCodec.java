@@ -6,26 +6,15 @@ import io.github.ithmal.itio.codec.cmpp.handler.codec.*;
 import io.github.ithmal.itio.codec.cmpp.handler.codec.v20.*;
 import io.github.ithmal.itio.codec.cmpp.handler.codec.v30.*;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelDuplexHandler;
-import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPromise;
-import io.netty.util.ReferenceCountUtil;
+import io.netty.handler.codec.ByteToMessageCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * cmpp的编解码器
- * @author: ken.lin
- * @since: 2023/2/4
- **/
-@ChannelHandler.Sharable
-@SuppressWarnings("unchecked")
-public class CmppMessageCodec extends ChannelDuplexHandler {
+public class CmppMessageCodec extends ByteToMessageCodec<CmppMessage> {
 
     private final ConcurrentHashMap<Command, IMessageCodec<? extends CmppMessage>> codecMap = new ConcurrentHashMap<>(16);
 
@@ -50,127 +39,75 @@ public class CmppMessageCodec extends ChannelDuplexHandler {
         codecMap.put(Command.ACTIVE_TEST_RESPONSE, new ActiveTestResponseMessageCodec());
     }
 
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if (!(msg instanceof ByteBuf)) {
-            super.channelRead(ctx, msg);
-            return;
-        }
-        try {
-            ByteBuf in = (ByteBuf) msg;
-            List<CmppMessage> out = new ArrayList<>(3);
-            decode(ctx, in, out);
-            for (CmppMessage message : out) {
-                super.channelRead(ctx, message);
-            }
-        } catch (Throwable cause) {
-            exceptionCaught(ctx, cause);
-        } finally {
-            if (!ReferenceCountUtil.release(msg)) {
-                ((ByteBuf) msg).release();
-            }
-        }
-    }
 
     @Override
-    public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
-        if (!(msg instanceof CmppMessage)) {
-            super.write(ctx, msg, promise);
-            return;
+    @SuppressWarnings("unchecked")
+    protected void encode(ChannelHandlerContext ctx, CmppMessage msg, ByteBuf out) throws Exception {
+        Command command = msg.getCommand();
+        IMessageCodec<CmppMessage> codec = (IMessageCodec<CmppMessage>) codecMap.get(command);
+        if (codec == null) {
+            throw new Exception("can not find codec of command: " + command);
         }
-        try {
-            ByteBuf out = encode(ctx, (CmppMessage) msg);
-            if (out != null) {
-                super.write(ctx, out, promise);
-            }
-        } catch (Throwable cause) {
-            exceptionCaught(ctx, cause);
-        }
-    }
-
-
-    protected ByteBuf encode(ChannelHandlerContext ctx, CmppMessage msg) throws Exception {
-        ByteBuf out = null;
-        try {
-            Command command = msg.getCommand();
-            IMessageCodec<CmppMessage> codec = (IMessageCodec<CmppMessage>) codecMap.get(command);
-            if (codec == null) {
-                logger.error("can not find codec for command: {}", command);
-                out.release();
-                out = null;
-                return null;
-            }
-            int sequenceId = msg.getSequenceId();
-            int commandId = command.getId();
-            int bodyLength = codec.getBodyLength(ctx, msg);
-            int totalLength = bodyLength + HEAD_LENGTH;
-            out = ctx.alloc().buffer(totalLength);
-            out.writeInt(totalLength);
-            out.writeInt(commandId);
-            out.writeInt(sequenceId);
-            int beforeReadIndex = out.readableBytes();
-            codec.encode(ctx, msg, out);
-            int afterReadIndex = out.readableBytes();
-            if (afterReadIndex - beforeReadIndex != bodyLength) {
-                String message = "data length except for codec: " + msg.getClass()
-                        + ", except:" + bodyLength + ",actual:" + (afterReadIndex - afterReadIndex);
-                throw new Exception(message);
-            }
-            return out;
-        } catch (Throwable e) {
-            if (out != null) {
-                out.release();
-            }
-            exceptionCaught(ctx, e);
-            return null;
+        out.markWriterIndex();
+        int sequenceId = msg.getSequenceId();
+        int commandId = command.getId();
+        int bodyLength = codec.getBodyLength(ctx, msg);
+        int totalLength = bodyLength + HEAD_LENGTH;
+        out.writeInt(totalLength);
+        out.writeInt(commandId);
+        out.writeInt(sequenceId);
+        int beforeReadIndex = out.readableBytes();
+        codec.encode(ctx, msg, out);
+        int afterReadIndex = out.readableBytes();
+        if (afterReadIndex - beforeReadIndex != bodyLength) {
+            out.resetWriterIndex();
+            String message = "excepted data length of codec: " + msg.getClass()
+                    + ", except:" + bodyLength + ",actual:" + (afterReadIndex - afterReadIndex);
+            throw new Exception(message);
         }
     }
 
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<CmppMessage> out) throws Exception {
-        for (; ; ) {
-            CmppMessage msg = decode(ctx, in);
-            if (msg == null) {
-                break;
-            } else {
-                out.add(msg);
-            }
-        }
-    }
 
-    protected CmppMessage decode(ChannelHandlerContext ctx, ByteBuf in) throws Exception {
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         if (in.readableBytes() < HEAD_LENGTH) {
-            return null;
+            return;
         }
+        in.markReaderIndex();
         int totalLength = in.readInt();
         int commandId = in.readInt();
         int sequenceId = in.readInt();
         int bodyLength = totalLength - HEAD_LENGTH;
         if (in.readableBytes() < bodyLength) {
-            // 可能是ChannelOption.SO_RCVBUF、ChannelOption.RCVBUF_ALLOCATOR设置过小
-            String message = String.format("readable bytes insufficiently： %s, %s, expect: %s, actual: %s",
-                    ctx.channel(), commandId, bodyLength, in.readableBytes());
-            throw new Exception(message);
+            in.resetReaderIndex();
+            return;
         }
         Command command = Command.of(commandId);
         if (command == null) {
             logger.error("not supported command id： {}", commandId);
             in.readBytes(bodyLength).release();
-            return null;
+            return;
         }
         IMessageCodec<CmppMessage> codec = (IMessageCodec<CmppMessage>) codecMap.get(command);
         if (codec == null) {
             logger.error("can not find codec for commandId: {}", commandId);
             in.readBytes(bodyLength).release();
-            return null;
+            return;
         }
         int beforeReadIndex = in.readerIndex();
-        CmppMessage out = codec.decode(ctx, sequenceId, in);
+        CmppMessage message = codec.decode(ctx, sequenceId, in);
         int afterReadIndex = in.readerIndex();
         if (afterReadIndex - beforeReadIndex != bodyLength) {
-            String message = "data length except for codec: " + out.getClass()
-                    + ", except:" + bodyLength + ",actual:" + (afterReadIndex - beforeReadIndex);
-            throw new Exception(message);
+            throw new Exception("data length except for codec: " + out.getClass()
+                    + ", except:" + bodyLength + ",actual:" + (afterReadIndex - beforeReadIndex));
         }
-        return out;
+        out.add(message);
     }
+
 }
+
+
+
+

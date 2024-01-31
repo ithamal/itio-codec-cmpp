@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MsgContentSlice {
 
+    private final int sequenceId;
+
     private final long msgId;
 
     private final short pkNumber;

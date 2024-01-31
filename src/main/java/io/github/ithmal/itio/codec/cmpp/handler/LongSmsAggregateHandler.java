@@ -20,15 +20,12 @@ import java.util.List;
  */
 public class LongSmsAggregateHandler extends ChannelDuplexHandler {
 
-    private final Channel channel;
-
     private final LongSmsAssembler<SubmitRequest> submitSmsAssembler;
 
     private final LongSmsAssembler<DeliverRequest> deliverSmsAssembler;
 
     public LongSmsAggregateHandler(Channel channel, LongSmsAssembler<SubmitRequest> submitSmsAssembler,
                                    LongSmsAssembler<DeliverRequest> deliverSmsAssembler) {
-        this.channel = channel;
         this.submitSmsAssembler = submitSmsAssembler;
         this.deliverSmsAssembler = deliverSmsAssembler;
         this.submitSmsAssembler.onTimeout((key, list) -> {

@@ -20,10 +20,12 @@ import io.github.ithmal.itio.codec.cmpp.util.TimeUtils;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.FixedRecvByteBufAllocator;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -34,19 +36,17 @@ public class CmppClientTests {
 
     @Test
     public void testConnect() throws InterruptedException {
-//        String host = "123.249.84.242";
-//        int port = 7890;
         String host = "127.0.0.1";
         int port = 7890;
-        String sourceAddr = "301001";
-        String password = "2ymsc7";
-        String sourceId = "106908887002";
-        int timestamp = TimeUtils.getTimestamp();
-        //
+        String sourceAddr = "200001";
+        String password = "200001";
+        String sourceId = "106925";
+
         SequenceManager sequenceManager = new SequenceManager();
         ItioClient client = new ItioClientImpl();
-        client.option(ChannelOption.SO_RCVBUF, 512);
-//        client.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(13));
+//        client.option(ChannelOption.SO_RCVBUF, 512);
+        client.option(ChannelOption.SO_SNDBUF, 20);
+        client.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(20));
         client.registerCodecHandler(ch -> new CmppMessageCodec());
         client.registerCodecHandler(ch -> new LongSmsAggregateHandler(ch, new MemoryLongSmsAssembler<>(300),
                 new MemoryLongSmsAssembler<>(300)));
@@ -66,6 +66,7 @@ public class CmppClientTests {
 
             @Override
             public ConnectRequest buildRequest() {
+                int timestamp = TimeUtils.getTimestamp();
                 AuthenticatorSource authenticatorSource = new AuthenticatorSource(sourceAddr, password, timestamp);
                 ConnectRequest connectRequest = new ConnectRequest(sequenceManager.nextValue());
                 connectRequest.setSourceAddr(sourceAddr);
@@ -79,11 +80,12 @@ public class CmppClientTests {
 
             @Override
             public void handleResponse(Connection connection, ConnectResponse response) throws HandshakeException {
+                int timestamp = TimeUtils.getTimestamp();
                 AuthenticatorSource authenticatorSource = new AuthenticatorSource(sourceAddr, password, timestamp);
                 AuthenticatorISMG authenticatorISMG = response.getAuthenticatorISMG();
                 authenticatorISMG.setAuthenticatorSource(authenticatorSource);
                 authenticatorISMG.setPassword(password);
-                System.out.println("验证结果：" + authenticatorISMG.validate());
+                System.out.println("验证结果：" + authenticatorISMG.validate() + ", " + response.getStatus());
                 if (response.getStatus() == 0) {
                     System.out.println("连接成功");
                 } else {
@@ -94,9 +96,9 @@ public class CmppClientTests {
         client.setAddress(host, port);
         // 请求
         Connection connection = client.getConnection().syncUninterruptibly().getNow();
-        String text = "【测试签名】测试信息";
-//        String text = "【测试签名】移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP" +
-//                "短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}.";
+//        String text = "【测试签名】测试信息";
+        String text = "【测试签名】移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}移动CMPP" +
+                "短信测试{time}移动CMPP短信测试{time}移动CMPP短信测试{time}.";
         int sequenceId = sequenceManager.nextValue();
         long msgId = System.currentTimeMillis();
 //        List<SubmitRequest> submitRequests = new ArrayList<>();
@@ -113,19 +115,18 @@ public class CmppClientTests {
 //            submitRequest.setMsgContent(msgContent);
 //            submitRequests.add(submitRequest);
 //        }
+//        List<SubmitResponse> submitResponses = client.writeWaitResponses(submitRequests, SubmitResponse.class);
         FullSubmitRequest fullSubmitRequest = new FullSubmitRequest();
-        fullSubmitRequest.setSequenceId(sequenceId);
         fullSubmitRequest.setSrcId(sourceId);
         fullSubmitRequest.setMsgSrc(sourceAddr);
         fullSubmitRequest.setMsgId(System.currentTimeMillis());
         fullSubmitRequest.setRegisteredDelivery((short) 1);
         fullSubmitRequest.setFeeUserType((short) 2);
         fullSubmitRequest.setDestTerminalIds(new String[]{"13924604900"});
-        fullSubmitRequest.setContent(LongSmsUtils.fromText(0, text, MsgFormat.UCS2));
+        fullSubmitRequest.setContent(LongSmsUtils.fromText(sequenceManager, msgId, text, MsgFormat.UCS2));
         Collection<SubmitRequest> submitRequests = fullSubmitRequest.toRequests();
-        Collection<SubmitResponse> submitResponses = connection.writeForResponses(Arrays.asList(fullSubmitRequest), SubmitResponse.class,
+        Collection<SubmitResponse> submitResponses = connection.writeForResponses(Collections.singletonList(fullSubmitRequest), SubmitResponse.class,
                 submitRequests.size()).syncUninterruptibly().getNow();
-//        List<SubmitResponse> submitResponses = client.writeWaitResponses(submitRequests, SubmitResponse.class);
         for (SubmitResponse submitResponse : submitResponses) {
             System.out.println("提交响应：" + submitResponse);
         }

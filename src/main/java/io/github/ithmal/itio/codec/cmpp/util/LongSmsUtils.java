@@ -1,6 +1,7 @@
 package io.github.ithmal.itio.codec.cmpp.util;
 
 import io.github.ithmal.itio.codec.cmpp.content.*;
+import io.github.ithmal.itio.codec.cmpp.sequence.SequenceManager;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -31,12 +32,12 @@ public class LongSmsUtils {
         return slices;
     }
 
-    public static LongSmsContent fromText(long msgId, String text, MsgFormat format) {
+    public static LongSmsContent fromText(SequenceManager sequenceManager, long msgId, String text, MsgFormat format) {
         ShortMsgContent[] shortMsgContents = fromText(text, format);
         LongSmsContent longSmsContent = new LongSmsContent(format, (short) shortMsgContents.length);
         for (short pkNumber = 1; pkNumber <= shortMsgContents.length; pkNumber++) {
             ShortMsgContent shortMsgContent = shortMsgContents[pkNumber - 1];
-            longSmsContent.append(new MsgContentSlice(msgId, pkNumber, shortMsgContent));
+            longSmsContent.append(new MsgContentSlice(sequenceManager.nextValue(), msgId, pkNumber, shortMsgContent));
         }
         return longSmsContent;
     }

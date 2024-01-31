@@ -1,6 +1,7 @@
 package io.github.ithmal.itio.codec.cmpp.message;
 
 import io.github.ithmal.itio.codec.cmpp.content.*;
+import io.github.ithmal.itio.codec.cmpp.sequence.SequenceManager;
 import lombok.Data;
 
 import java.util.ArrayList;
@@ -14,11 +15,6 @@ import java.util.List;
  */
 @Data
 public class FullDeliverRequest {
-
-    /**
-     * 序号
-     */
-    private int sequenceId;
 
     /**
      * 消息id
@@ -64,7 +60,6 @@ public class FullDeliverRequest {
     @Override
     public String toString() {
         return "FullDeliverRequest{" +
-                "sequenceId=" + sequenceId +
                 ", msgId=" + msgId +
                 ", destId='" + destId + '\'' +
                 ", serviceId='" + serviceId + '\'' +
@@ -82,27 +77,28 @@ public class FullDeliverRequest {
      * @return
      */
     public Collection<DeliverRequest> toRequests() {
-        // 报告
-        if (report != null) {
-            DeliverRequest request = new DeliverRequest(this.sequenceId);
-            request.setMsgId(request.getMsgId());
-            request.setSequenceId(this.sequenceId);
-            request.setTpUdhi((short) 0);
-            request.setTpPid((short) 0);
-            request.setServiceId(this.serviceId);
-            request.setSrcTerminalId(this.srcTerminalId);
-            request.setDestId(this.destId);
-            request.setReport(this.report);
-            return Collections.singleton(request);
+        if(content.getSlices().isEmpty()){
+            throw new RuntimeException("The FullDeliverRequest slices is empty");
         }
-        // 内容
-        if (content != null) {
-            List<DeliverRequest> requests = new ArrayList<>(content.getPkTotal());
-            for (MsgContentSlice slice : content.getSlices()) {
+        List<DeliverRequest> requests = new ArrayList<>(content.getPkTotal());
+        for (MsgContentSlice slice : content.getSlices()) {
+            if(slice.getSequenceId() == 0){
+                throw new IllegalArgumentException();
+            }
+            if(report != null){
+                DeliverRequest request = new DeliverRequest(slice.getSequenceId());
+                request.setMsgId(request.getMsgId());
+                request.setTpUdhi((short) 0);
+                request.setTpPid((short) 0);
+                request.setServiceId(this.serviceId);
+                request.setSrcTerminalId(this.srcTerminalId);
+                request.setDestId(this.destId);
+                request.setReport(this.report);
+                requests.add(request);
+            }else{
                 UserDataHeader header = slice.getContent().getHeader();
-                DeliverRequest request = new DeliverRequest(this.sequenceId);
+                DeliverRequest request = new DeliverRequest(slice.getSequenceId());
                 request.setMsgId(slice.getMsgId() == 0 ? this.msgId : slice.getMsgId());
-                request.setSequenceId(this.sequenceId);
                 request.setTpPid(this.tpPid);
                 request.setTpUdhi(header != null ? 1 : this.tpUdhi);
                 request.setMsgContent(slice.getContent());
@@ -112,9 +108,8 @@ public class FullDeliverRequest {
                 request.setReport(this.report);
                 requests.add(request);
             }
-            return requests;
         }
-        return null;
+        return requests;
     }
 
     /**
@@ -126,7 +121,6 @@ public class FullDeliverRequest {
     public static FullDeliverRequest fromRequests(Collection<DeliverRequest> requests) {
         FullDeliverRequest fullRequest = new FullDeliverRequest();
         DeliverRequest request = requests.iterator().next();
-        fullRequest.sequenceId = request.getSequenceId();
         fullRequest.msgId = request.getMsgId();
         fullRequest.tpPid = request.getTpPid();
         fullRequest.tpUdhi = request.getTpUdhi();
@@ -162,7 +156,7 @@ public class FullDeliverRequest {
                 throw new IllegalArgumentException("content format is inconsistent: " + msgFormat + "," + content.getFormat());
             }
             short pkNumber = pkTotal == 1 ? 1 : content.getHeader().getPkNumber();
-            longSmsContent.append(new MsgContentSlice(msgId, pkNumber, content));
+            longSmsContent.append(new MsgContentSlice(request.getSequenceId(), msgId, pkNumber, content));
         }
         return longSmsContent;
     }

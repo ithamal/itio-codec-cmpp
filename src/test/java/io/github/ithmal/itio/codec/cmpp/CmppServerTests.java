@@ -17,11 +17,13 @@ import io.github.ithmal.itio.codec.cmpp.handler.LongSmsAggregateHandler;
 import io.github.ithmal.itio.codec.cmpp.message.*;
 import io.github.ithmal.itio.codec.cmpp.sequence.SequenceManager;
 import io.github.ithmal.itio.codec.cmpp.store.MemoryLongSmsAssembler;
-import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.*;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -39,8 +41,12 @@ public class CmppServerTests {
         //
         SequenceManager sequenceManager = new SequenceManager();
         ItioServer server = new ItioServerImpl();
+        server.option(ChannelOption.SO_RCVBUF, 512);
+//        server.option(ChannelOption.RCVBUF_ALLOCATOR, new FixedRecvByteBufAllocator(20));
+//        server.setWorkEventLoopGroup(new DefaultEventLoopGroup(1));
         server.registerCodecHandler(ch -> new CmppMessageCodec());
-        server.registerCodecHandler(ch -> new LongSmsAggregateHandler(ch, new MemoryLongSmsAssembler<>(300),
+        server.registerCodecHandler(ch -> new LongSmsAggregateHandler(ch,
+                new MemoryLongSmsAssembler<>(300),
                 new MemoryLongSmsAssembler<>(300)));
         server.registerBizHandler(ch -> new ActiveTestRequestHandler());
         server.setHandshake(new HandshakeAdapter<ConnectRequest, ConnectResponse>() {
@@ -58,6 +64,7 @@ public class CmppServerTests {
                     authenticatorSource.setSourceAddr(sourceAddr);
                     authenticatorSource.setPassword(password);
                     short status = (authenticatorSource.validate() ? ConnectResult.OK : ConnectResult.AUTH_ERR).getCode();
+                    status = ConnectResult.OK.getCode();
                     ConnectResponse response = new ConnectResponse(request.getSequenceId());
                     response.setVersion(request.getVersion());
                     response.setStatus(status);
@@ -84,19 +91,24 @@ public class CmppServerTests {
                 String userName = connection.getId().getUserName();
                 System.out.println("接收到,来自用户[" + userName + "]的消息：" + msg);
                 // 响应
+                List<Long> respMsgIdList = new ArrayList<>();
                 for (MsgContentSlice slice : msg.getContent().getSlices()) {
-                    SubmitResponse response = new SubmitResponse(msg.getSequenceId());
-                    response.setMsgId(slice.getMsgId());
+                    long respMsgId = System.nanoTime();
+                    respMsgIdList.add(respMsgId);
+                    SubmitResponse response = new SubmitResponse(slice.getSequenceId());
+                    response.setMsgId(respMsgId);
                     connection.writeAndFlush(response);
                 }
                 // 报告
                 if (msg.getRegisteredDelivery() == 1) {
-                    DeliverRequest deliverRequest = new DeliverRequest(sequenceManager.nextValue());
-                    deliverRequest.setMsgId(System.currentTimeMillis());
-                    deliverRequest.setDestId(msg.getSrcId());
-                    deliverRequest.setSrcTerminalId("100000");
-                    deliverRequest.setReport(new MsgReport(msg.getMsgId(), DeliverStatus.UNDELIV.toString(), msg.getDestTerminalIds()[0]));
-                    connection.writeAndFlush(deliverRequest);
+                    for (Long respMsgId : respMsgIdList) {
+                        DeliverRequest deliverRequest = new DeliverRequest(sequenceManager.nextValue());
+                        deliverRequest.setMsgId(respMsgId);
+                        deliverRequest.setDestId(msg.getSrcId());
+                        deliverRequest.setSrcTerminalId("100000");
+                        deliverRequest.setReport(new MsgReport(msg.getMsgId(), "DELIVRD", msg.getDestTerminalIds()[0]));
+                        connection.writeAndFlush(deliverRequest);
+                    }
                 }
                 // 上行
                 if (msg.getRegisteredDelivery() == 1) {
@@ -111,7 +123,7 @@ public class CmppServerTests {
 
             @Override
             public Object buildUnAuthResponse(FullSubmitRequest request) {
-                SubmitResponse response = new SubmitResponse(request.getSequenceId());
+                SubmitResponse response = new SubmitResponse(0);
                 response.setResult(SubmitResult.COMMAND_ID_ERR.getCode());
                 response.setMsgId(request.getMsgId());
                 return response;
